@@ -6,6 +6,7 @@ import type {
     RenamePreviewResponse,
     RenameExecuteRequest,
     RenameExecuteResponse,
+    VacationModeOptions,
 } from './types';
 
 const API_BASE = '/api';
@@ -51,9 +52,15 @@ export const api = {
     async previewRename(
         folderPath: string,
         pattern: string,
-        extensions?: string[]
+        extensions?: string[],
+        vacationMode?: VacationModeOptions
     ): Promise<RenamePreviewResponse> {
-        const body: RenamePreviewRequest = { folderPath, pattern, extensions };
+        const body: RenamePreviewRequest = {
+            folderPath,
+            pattern,
+            extensions,
+            vacationMode
+        };
         return request<RenamePreviewResponse>('/preview', {
             method: 'POST',
             body: JSON.stringify(body),
@@ -65,9 +72,10 @@ export const api = {
      */
     async executeRename(
         items: RenamePreviewRequest['folderPath'] extends string ? RenameExecuteRequest['items'] : never,
+        baseFolderPath?: string,
         dryRun = false
     ): Promise<RenameExecuteResponse> {
-        const body: RenameExecuteRequest = { items, dryRun };
+        const body: RenameExecuteRequest = { items, baseFolderPath, dryRun };
         return request<RenameExecuteResponse>('/rename', {
             method: 'POST',
             body: JSON.stringify(body),

@@ -4,10 +4,12 @@ using System.Text.Json.Serialization;
 // ============================================================================
 
 [JsonSerializable(typeof(FileInfo))]
+[JsonSerializable(typeof(GpsCoordinates))]
 [JsonSerializable(typeof(ScanRequest))]
 [JsonSerializable(typeof(ScanResponse))]
 [JsonSerializable(typeof(RenamePattern))]
 [JsonSerializable(typeof(RenamePattern[]))]
+[JsonSerializable(typeof(VacationModeOptions))]
 [JsonSerializable(typeof(RenamePreviewRequest))]
 [JsonSerializable(typeof(RenamePreviewItem))]
 [JsonSerializable(typeof(RenamePreviewItem[]))]

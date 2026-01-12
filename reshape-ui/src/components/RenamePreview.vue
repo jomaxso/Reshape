@@ -119,6 +119,7 @@ watch(customPattern, (val) => {
                 <div class="table-header">
                     <span class="col-checkbox"></span>
                     <span class="col-status"></span>
+                    <span class="col-day">Day</span>
                     <span class="col-folder">Folder</span>
                     <span class="col-original">Original</span>
                     <span class="col-arrow"></span>
@@ -142,6 +143,10 @@ watch(customPattern, (val) => {
                             <span v-if="item.hasConflict" class="status-icon conflict">⚠️</span>
                             <span v-else-if="item.originalName === item.newName" class="status-icon unchanged">➖</span>
                             <span v-else class="status-icon ok">✅</span>
+                        </span>
+                        <span class="col-day">
+                            <span v-if="item.dayNumber" class="day-badge">{{ item.dayNumber }}</span>
+                            <span v-else class="day-badge empty">-</span>
                         </span>
                         <span class="col-folder" :title="item.relativePath">
                             {{ item.relativePath || '.' }}
@@ -337,7 +342,7 @@ h3 {
 
 .table-header {
     display: grid;
-    grid-template-columns: 40px 40px 150px 1fr 30px 1fr;
+    grid-template-columns: 40px 40px 50px 150px 1fr 30px 1fr;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     background: var(--bg-tertiary, #252526);
@@ -354,7 +359,7 @@ h3 {
 
 .preview-row {
     display: grid;
-    grid-template-columns: 40px 40px 150px 1fr 30px 1fr;
+    grid-template-columns: 40px 40px 50px 150px 1fr 30px 1fr;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     border-bottom: 1px solid var(--border-light, #2d2d2d);
@@ -389,6 +394,25 @@ h3 {
 
 .col-status {
     text-align: center;
+}
+
+.col-day {
+    text-align: center;
+}
+
+.day-badge {
+    display: inline-block;
+    padding: 0.15rem 0.4rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.day-badge.empty {
+    background: transparent;
+    color: var(--text-muted, #888);
 }
 
 .col-folder {

@@ -1,5 +1,10 @@
 // API Types - matching backend models
 
+export interface GpsCoordinates {
+    latitude: number;
+    longitude: number;
+}
+
 export interface FileInfo {
     name: string;
     fullPath: string;
@@ -10,6 +15,8 @@ export interface FileInfo {
     modifiedAt: string;
     isSelected: boolean;
     metadata: Record<string, string>;
+    gpsCoordinates?: GpsCoordinates;
+    dateTakenUtc?: string;
 }
 
 export interface ScanRequest {
@@ -28,10 +35,18 @@ export interface RenamePattern {
     description: string;
 }
 
+export interface VacationModeOptions {
+    enabled: boolean;
+    startDate?: string;
+    dayFolderPattern: string;
+    subfolderPattern?: string;
+}
+
 export interface RenamePreviewRequest {
     folderPath: string;
     pattern: string;
     extensions?: string[];
+    vacationMode?: VacationModeOptions;
 }
 
 export interface RenamePreviewItem {
@@ -41,6 +56,7 @@ export interface RenamePreviewItem {
     relativePath: string;
     hasConflict: boolean;
     isSelected: boolean;
+    dayNumber?: number;
 }
 
 export interface RenamePreviewResponse {
@@ -50,6 +66,7 @@ export interface RenamePreviewResponse {
 
 export interface RenameExecuteRequest {
     items: RenamePreviewItem[];
+    baseFolderPath?: string;
     dryRun?: boolean;
 }
 

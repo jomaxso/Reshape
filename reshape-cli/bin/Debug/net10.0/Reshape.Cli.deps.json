@@ -10,7 +10,8 @@
         "dependencies": {
           "MetadataExtractor": "2.8.1",
           "Spectre.Console": "0.54.0",
-          "System.CommandLine": "2.0.1"
+          "System.CommandLine": "2.0.1",
+          "TimeZoneConverter": "7.2.0"
         },
         "runtime": {
           "Reshape.Cli.dll": {}
@@ -84,6 +85,14 @@
           }
         }
       },
+      "TimeZoneConverter/7.2.0": {
+        "runtime": {
+          "lib/net9.0/TimeZoneConverter.dll": {
+            "assemblyVersion": "7.2.0.0",
+            "fileVersion": "7.2.0.0"
+          }
+        }
+      },
       "XmpCore/6.1.10.1": {
         "runtime": {
           "lib/netstandard2.0/XmpCore.dll": {
@@ -120,6 +129,13 @@
       "sha512": "sha512-GLc43eDFq8KbpxIb7UhTwV0vC5CzB0NspJvfFbfhoW4O057xCJXuO18KLpVn9x3JykQn2mRske6+I6JXHwqmDg==",
       "path": "system.commandline/2.0.1",
       "hashPath": "system.commandline.2.0.1.nupkg.sha512"
+    },
+    "TimeZoneConverter/7.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-4Poqu79dTmacVETqUJ53g3x4U21V/cmWPSlehdsVE4Q00akavvlRq+SRjcg/CmfO9ibOCjRl6TeUV7hkC5RC4w==",
+      "path": "timezoneconverter/7.2.0",
+      "hashPath": "timezoneconverter.7.2.0.nupkg.sha512"
     },
     "XmpCore/6.1.10.1": {
       "type": "package",

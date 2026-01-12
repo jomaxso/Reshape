@@ -28,7 +28,7 @@ internal static class RenameCommandHandler
                 return 0;
             }
 
-            var results = FileService.ExecuteRename(preview, dryRun);
+            var results = FileService.ExecuteRename(preview, fullPath, dryRun);
 
             DisplayResults(results, dryRun);
 

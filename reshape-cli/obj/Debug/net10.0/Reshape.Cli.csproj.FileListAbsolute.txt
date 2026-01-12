@@ -33,9 +33,6 @@ C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\rji
 C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\scopedcss\bundle\Reshape.Cli.styles.css
-C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\compressed\ytbluvzwdg-{0}-k3aezyaao4-k3aezyaao4.gz
-C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\compressed\fiwe5v1ghk-{0}-7qir32qil5-7qir32qil5.gz
-C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\compressed\s4iprys8le-{0}-ondr4sdg0l-ondr4sdg0l.gz
 C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\compressed\2u3ugowmtp-{0}-69kjnsiwqx-69kjnsiwqx.gz
 C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\staticwebassets.build.json
 C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\staticwebassets.build.json.cache
@@ -48,3 +45,7 @@ C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\ref
 C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\Reshape.Cli.pdb
 C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\Reshape.Cli.genruntimeconfig.cache
 C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\ref\Reshape.Cli.dll
+C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\bin\Debug\net10.0\TimeZoneConverter.dll
+C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\compressed\0twqgsa1vt-{0}-g6194vvpfz-g6194vvpfz.gz
+C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\compressed\etxyukw1nr-{0}-6xae6w13a9-6xae6w13a9.gz
+C:\Users\johannes-max.sorge\Desktop\TypeScript\reshape-cli\obj\Debug\net10.0\compressed\s4iprys8le-{0}-52nveln606-52nveln606.gz

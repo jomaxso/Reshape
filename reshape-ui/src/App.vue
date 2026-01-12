@@ -3,22 +3,43 @@ import { ref, onMounted } from 'vue';
 import FolderPicker from './components/FolderPicker.vue';
 import FileList from './components/FileList.vue';
 import MetadataPanel from './components/MetadataPanel.vue';
-import RenamePreview from './components/RenamePreview.vue';
+import VacationModePanel from './components/VacationModePanel.vue';
+import GeneralModePanel from './components/GeneralModePanel.vue';
+import PlaceholderReference from './components/PlaceholderReference.vue';
 import api from './api';
-import type { FileInfo, RenamePattern, RenamePreviewItem } from './types';
+import type { FileInfo, RenamePattern, RenamePreviewItem, VacationModeOptions } from './types';
 
 // State
 const folderPath = ref('');
 const files = ref<FileInfo[]>([]);
 const selectedFile = ref<FileInfo | null>(null);
 const patterns = ref<RenamePattern[]>([]);
-const previewItems = ref<RenamePreviewItem[]>([]);
-const currentPattern = ref('');
+const generalPreviewItems = ref<RenamePreviewItem[]>([]);
+const vacationPreviewItems = ref<RenamePreviewItem[]>([]);
+
+// Mode state - only one mode active at a time (accordion pattern)
+const activeMode = ref<'general' | 'vacation' | null>('general');
 
 const loading = ref(false);
-const previewLoading = ref(false);
+const generalLoading = ref(false);
+const vacationLoading = ref(false);
 const error = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
+
+// Toggle mode (accordion behavior - only one open at a time)
+function handleModeChange(mode: 'general' | 'vacation', isActive: boolean) {
+  if (isActive) {
+    activeMode.value = mode;
+    // Clear the other mode's preview when switching
+    if (mode === 'general') {
+      vacationPreviewItems.value = [];
+    } else {
+      generalPreviewItems.value = [];
+    }
+  } else {
+    activeMode.value = null;
+  }
+}
 
 // Load patterns on mount
 onMounted(async () => {
@@ -36,65 +57,113 @@ async function handleScan() {
   loading.value = true;
   error.value = null;
   successMessage.value = null;
-  previewItems.value = [];
-  selectedFile.value = null;
+  generalPreviewItems.value = [];
+  vacationPreviewItems.value = [];
 
   try {
     const response = await api.scanFolder(folderPath.value);
     files.value = response.files;
 
-    if (response.files.length === 0) {
+    // Auto-select first file
+    const firstFile = response.files[0];
+    if (firstFile) {
+      selectedFile.value = firstFile;
+    } else {
+      selectedFile.value = null;
       error.value = 'No files found in this folder';
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to scan folder';
     files.value = [];
+    selectedFile.value = null;
   } finally {
     loading.value = false;
   }
 }
 
-// Generate preview
-async function handlePreview(pattern: string) {
+// Generate general preview
+async function handleGeneralPreview(pattern: string) {
   if (!folderPath.value || !pattern) return;
 
-  currentPattern.value = pattern;
-  previewLoading.value = true;
+  generalLoading.value = true;
   error.value = null;
 
   try {
     const response = await api.previewRename(folderPath.value, pattern);
-    previewItems.value = response.items;
+    generalPreviewItems.value = response.items;
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to generate preview';
   } finally {
-    previewLoading.value = false;
+    generalLoading.value = false;
   }
 }
 
-// Execute rename
-async function handleExecute() {
-  if (previewItems.value.length === 0) return;
+// Generate vacation preview
+async function handleVacationPreview({ pattern, vacationMode }: { pattern: string; vacationMode: VacationModeOptions }) {
+  if (!folderPath.value || !pattern || !vacationMode.enabled) {
+    vacationPreviewItems.value = [];
+    return;
+  }
+
+  vacationLoading.value = true;
+  error.value = null;
+
+  try {
+    const response = await api.previewRename(folderPath.value, pattern, undefined, vacationMode);
+    vacationPreviewItems.value = response.items;
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to generate preview';
+  } finally {
+    vacationLoading.value = false;
+  }
+}
+
+// Execute rename (general mode)
+async function handleGeneralExecute() {
+  if (generalPreviewItems.value.length === 0) return;
 
   loading.value = true;
   error.value = null;
   successMessage.value = null;
 
   try {
-    const response = await api.executeRename(previewItems.value);
+    const response = await api.executeRename(generalPreviewItems.value, folderPath.value);
 
     if (response.errorCount > 0) {
-      error.value = `${response.errorCount} file(s) failed to rename`;
+      error.value = `${response.errorCount} Datei(en) konnten nicht umbenannt werden`;
     }
 
     if (response.successCount > 0) {
-      successMessage.value = `✅ Successfully renamed ${response.successCount} file(s)`;
-
-      // Refresh file list and preview
+      successMessage.value = `✅ ${response.successCount} Datei(en) erfolgreich umbenannt`;
       await handleScan();
-      if (currentPattern.value) {
-        await handlePreview(currentPattern.value);
-      }
+      generalPreviewItems.value = [];
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to execute rename';
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Execute rename (vacation mode)
+async function handleVacationExecute() {
+  if (vacationPreviewItems.value.length === 0) return;
+
+  loading.value = true;
+  error.value = null;
+  successMessage.value = null;
+
+  try {
+    const response = await api.executeRename(vacationPreviewItems.value, folderPath.value);
+
+    if (response.errorCount > 0) {
+      error.value = `${response.errorCount} Datei(en) konnten nicht umbenannt werden`;
+    }
+
+    if (response.successCount > 0) {
+      successMessage.value = `✅ ${response.successCount} Datei(en) erfolgreich umbenannt`;
+      await handleScan();
+      vacationPreviewItems.value = [];
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to execute rename';
@@ -116,23 +185,43 @@ function handleToggleFileSelection(file: FileInfo) {
       : f
   );
 
-  // Also update in preview items if they exist
-  previewItems.value = previewItems.value.map(p =>
+  // Update in both preview lists
+  generalPreviewItems.value = generalPreviewItems.value.map(p =>
+    p.fullPath === file.fullPath
+      ? { ...p, isSelected: !file.isSelected }
+      : p
+  );
+
+  vacationPreviewItems.value = vacationPreviewItems.value.map(p =>
     p.fullPath === file.fullPath
       ? { ...p, isSelected: !file.isSelected }
       : p
   );
 }
 
-// Toggle preview item selection
-function handleTogglePreviewItem(item: RenamePreviewItem) {
-  previewItems.value = previewItems.value.map(p =>
+// Toggle general preview item selection
+function handleToggleGeneralItem(item: RenamePreviewItem) {
+  generalPreviewItems.value = generalPreviewItems.value.map(p =>
     p.fullPath === item.fullPath
       ? { ...p, isSelected: !p.isSelected }
       : p
   );
 
-  // Also update in files list
+  files.value = files.value.map(f =>
+    f.fullPath === item.fullPath
+      ? { ...f, isSelected: !item.isSelected }
+      : f
+  );
+}
+
+// Toggle vacation preview item selection
+function handleToggleVacationItem(item: RenamePreviewItem) {
+  vacationPreviewItems.value = vacationPreviewItems.value.map(p =>
+    p.fullPath === item.fullPath
+      ? { ...p, isSelected: !p.isSelected }
+      : p
+  );
+
   files.value = files.value.map(f =>
     f.fullPath === item.fullPath
       ? { ...f, isSelected: !item.isSelected }
@@ -162,21 +251,42 @@ function handleTogglePreviewItem(item: RenamePreviewItem) {
 
       <!-- Content Grid -->
       <div v-if="files.length > 0" class="content-grid">
-        <!-- Left: File List -->
+        <!-- Left: File List & Details -->
         <div class="panel files-panel">
-          <h2>📂 Files ({{ files.length }})</h2>
+          <div class="panel-title">
+            <span class="panel-icon">📂</span>
+            <span>Dateien ({{ files.length }})</span>
+          </div>
           <FileList :files="files" :selected-file="selectedFile" @select="handleSelectFile"
             @toggle-selection="handleToggleFileSelection" />
+
+          <!-- File Details below file list -->
+          <MetadataPanel v-if="selectedFile" :file="selectedFile" class="metadata-section" />
         </div>
 
-        <!-- Right: Metadata + Rename -->
+        <!-- Right: Rename Modes -->
         <div class="panel rename-panel">
-          <!-- Metadata Panel (when file selected) -->
-          <MetadataPanel v-if="selectedFile" :file="selectedFile" class="metadata-section" />
+          <!-- Mode Selection Info -->
+          <div v-if="activeMode === null" class="mode-hint">
+            <span class="hint-icon">💡</span>
+            <span>Wähle einen Modus um zu beginnen</span>
+          </div>
 
-          <!-- Rename Preview -->
-          <RenamePreview :patterns="patterns" :preview-items="previewItems" :loading="previewLoading"
-            @preview="handlePreview" @execute="handleExecute" @toggle-item="handleTogglePreviewItem" />
+          <!-- General Mode Panel -->
+          <GeneralModePanel :patterns="patterns" :preview-items="generalPreviewItems" :loading="generalLoading"
+            :is-active="activeMode === 'general'"
+            @mode-change="(active: boolean) => handleModeChange('general', active)" @preview="handleGeneralPreview"
+            @execute="handleGeneralExecute" @toggle-item="handleToggleGeneralItem" />
+
+          <!-- Vacation Mode Panel -->
+          <VacationModePanel file-pattern="" :preview-items="vacationPreviewItems" :loading="vacationLoading"
+            :files="files" :is-active="activeMode === 'vacation'"
+            @mode-change="(active: boolean) => handleModeChange('vacation', active)" @preview="handleVacationPreview"
+            @execute="handleVacationExecute" @toggle-item="handleToggleVacationItem" />
+
+          <!-- Placeholder Reference (for all modes) -->
+          <PlaceholderReference />
+
         </div>
       </div>
 
@@ -196,19 +306,61 @@ function handleTogglePreviewItem(item: RenamePreviewItem) {
 
 <style>
 :root {
-  --bg-primary: #121212;
-  --bg-secondary: #1e1e1e;
-  --bg-tertiary: #252526;
-  --bg-hover: #2a2a2a;
-  --border-color: #3e3e3e;
-  --border-light: #2d2d2d;
-  --text-color: #ffffff;
-  --text-muted: #888888;
-  --accent-color: #007acc;
-  --accent-hover: #0098ff;
-  --accent-bg: rgba(0, 122, 204, 0.2);
-  --error-color: #f44336;
-  --success-color: #4caf50;
+  /* Modern color palette with smooth gradients */
+  --bg-primary: #0f0f11;
+  --bg-secondary: #17181c;
+  --bg-tertiary: #1f2028;
+  --bg-card: #22242e;
+  --bg-hover: #2a2d3a;
+  --bg-active: #323644;
+
+  --border-color: #2e313d;
+  --border-light: #252830;
+  --border-focus: #4a90d9;
+
+  --text-color: #e8eaed;
+  --text-secondary: #b8bcc4;
+  --text-muted: #6b7280;
+  --text-dim: #4b5563;
+
+  --accent-color: #4a90d9;
+  --accent-hover: #5ba0e9;
+  --accent-bg: rgba(74, 144, 217, 0.12);
+  --accent-border: rgba(74, 144, 217, 0.3);
+
+  --success-color: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.12);
+  --success-border: rgba(52, 211, 153, 0.3);
+
+  --warning-color: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.12);
+  --warning-border: rgba(251, 191, 36, 0.3);
+
+  --error-color: #f87171;
+  --error-bg: rgba(248, 113, 113, 0.12);
+  --error-border: rgba(248, 113, 113, 0.3);
+
+  --vacation-color: #f59e0b;
+  --vacation-bg: rgba(245, 158, 11, 0.12);
+  --vacation-border: rgba(245, 158, 11, 0.3);
+
+  --general-color: #8b5cf6;
+  --general-bg: rgba(139, 92, 246, 0.12);
+  --general-border: rgba(139, 92, 246, 0.3);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+
+  /* Border radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
 }
 
 * {
@@ -218,10 +370,13 @@ function handleTogglePreviewItem(item: RenamePreviewItem) {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   background: var(--bg-primary);
   color: var(--text-color);
   line-height: 1.6;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 </style>
 
@@ -230,61 +385,74 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
 }
 
 .header {
-  padding: 1.5rem 2rem;
+  padding: 1.25rem 2rem;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .header h1 {
-  font-size: 1.75rem;
-  margin-bottom: 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--accent-color) 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .subtitle {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.875rem;
+  font-weight: 400;
 }
 
 .main {
   flex: 1;
-  padding: 2rem;
-  max-width: 1400px;
+  padding: 1.5rem;
+  max-width: 1600px;
   margin: 0 auto;
   width: 100%;
 }
 
 .message {
-  padding: 1rem 1.25rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.625rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
 }
 
 .message.error {
-  background: rgba(244, 67, 54, 0.15);
-  border: 1px solid rgba(244, 67, 54, 0.3);
-  color: #ff6b6b;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error-color);
 }
 
 .message.success {
-  background: rgba(76, 175, 80, 0.15);
-  border: 1px solid rgba(76, 175, 80, 0.3);
-  color: #69f0ae;
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success-color);
 }
 
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr;
   gap: 1.5rem;
+  align-items: start;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .content-grid {
     grid-template-columns: 1fr;
   }
@@ -296,13 +464,48 @@ body {
   gap: 1rem;
 }
 
-.panel h2 {
-  font-size: 1.1rem;
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--text-color);
+  padding: 0.5rem 0;
+}
+
+.panel-icon {
+  font-size: 1.1rem;
+}
+
+.files-panel {
+  min-height: 500px;
+}
+
+.rename-panel {
+  position: sticky;
+  top: 1.5rem;
+}
+
+.mode-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.hint-icon {
+  font-size: 1.25rem;
 }
 
 .metadata-section {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .empty-state {
@@ -310,37 +513,46 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 5rem 2rem;
   text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  margin-top: 2rem;
 }
 
 .empty-icon {
   font-size: 4rem;
   margin-bottom: 1.5rem;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 .empty-state h2 {
   margin-bottom: 0.5rem;
   color: var(--text-color);
+  font-weight: 600;
 }
 
 .empty-state p {
   color: var(--text-muted);
+  max-width: 400px;
 }
 
 .footer {
   padding: 1rem 2rem;
   text-align: center;
-  color: var(--text-muted);
-  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-size: 0.8rem;
   border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
 }
 
 .footer code {
   background: var(--bg-tertiary);
   padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-family: 'Consolas', 'Monaco', monospace;
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 </style>

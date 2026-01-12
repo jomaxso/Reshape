@@ -14,12 +14,11 @@ const emit = defineEmits<{
 const inputPath = ref(props.modelValue);
 
 const isValidPath = computed(() => {
-    // Basic path validation - looks like a Windows or Unix path
     const path = inputPath.value.trim();
     return path.length > 0 && (
-        /^[a-zA-Z]:\\/.test(path) || // Windows: C:\...
-        /^\//.test(path) ||          // Unix: /...
-        /^\.\.?\//.test(path)        // Relative: ./ or ../
+        /^[a-zA-Z]:\\/.test(path) ||
+        /^\//.test(path) ||
+        /^\.\.?\//.test(path)
     );
 });
 
@@ -39,42 +38,46 @@ function handleKeydown(e: KeyboardEvent) {
 <template>
     <div class="folder-picker">
         <div class="input-group">
-            <span class="icon">📁</span>
+            <span class="input-icon">📁</span>
             <input v-model="inputPath" type="text"
-                placeholder="Enter folder path (e.g., C:\Photos or /home/user/images)" :disabled="loading"
+                placeholder="Ordnerpfad eingeben (z.B. C:\Fotos oder /home/user/images)" :disabled="loading"
                 @keydown="handleKeydown" class="path-input" />
-            <button @click="handleScan" :disabled="!isValidPath || loading" class="scan-button">
+            <button @click="handleScan" :disabled="!isValidPath || loading" class="scan-btn">
                 <span v-if="loading" class="spinner"></span>
-                <span v-else>🔍 Scan</span>
+                <template v-else>
+                    <span class="btn-icon">🔍</span>
+                    <span class="btn-text">Scannen</span>
+                </template>
             </button>
         </div>
         <p v-if="inputPath && !isValidPath" class="hint error">
-            Please enter a valid folder path
+            Bitte einen gültigen Ordnerpfad eingeben
         </p>
     </div>
 </template>
 
 <style scoped>
 .folder-picker {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 .input-group {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: var(--bg-secondary, #1e1e1e);
-    border: 2px solid var(--border-color, #3e3e3e);
-    border-radius: 8px;
+    background: var(--bg-card, #22242e);
+    border: 1px solid var(--border-color, #2e313d);
+    border-radius: var(--radius-md, 10px);
     padding: 0.5rem;
-    transition: border-color 0.2s;
+    transition: all var(--transition-fast, 150ms ease);
 }
 
 .input-group:focus-within {
-    border-color: var(--accent-color, #007acc);
+    border-color: var(--accent-color, #4a90d9);
+    box-shadow: 0 0 0 3px var(--accent-bg, rgba(74, 144, 217, 0.12));
 }
 
-.icon {
+.input-icon {
     font-size: 1.25rem;
     padding: 0 0.5rem;
 }
@@ -83,44 +86,54 @@ function handleKeydown(e: KeyboardEvent) {
     flex: 1;
     background: transparent;
     border: none;
-    color: var(--text-color, #fff);
-    font-size: 1rem;
+    color: var(--text-color, #e8eaed);
+    font-size: 0.9rem;
     padding: 0.5rem;
     outline: none;
-    font-family: 'Consolas', 'Monaco', monospace;
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
 }
 
 .path-input::placeholder {
-    color: var(--text-muted, #888);
+    color: var(--text-dim, #4b5563);
 }
 
 .path-input:disabled {
     opacity: 0.6;
 }
 
-.scan-button {
-    background: var(--accent-color, #007acc);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.625rem 1.25rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
+.scan-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    background: var(--accent-color, #4a90d9);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm, 6px);
+    padding: 0.6rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast, 150ms ease);
 }
 
-.scan-button:hover:not(:disabled) {
-    background: var(--accent-hover, #0098ff);
+.scan-btn:hover:not(:disabled) {
+    background: var(--accent-hover, #5ba0e9);
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 144, 217, 0.3);
 }
 
-.scan-button:disabled {
-    opacity: 0.5;
+.scan-btn:disabled {
+    opacity: 0.4;
     cursor: not-allowed;
+    transform: none;
+}
+
+.btn-icon {
+    font-size: 1rem;
+}
+
+.btn-text {
+    font-weight: 600;
 }
 
 .spinner {
@@ -139,12 +152,12 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .hint {
-    margin: 0.5rem 0 0 0.5rem;
-    font-size: 0.85rem;
-    color: var(--text-muted, #888);
+    margin: 0.5rem 0 0 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-muted, #6b7280);
 }
 
 .hint.error {
-    color: var(--error-color, #f44336);
+    color: var(--error-color, #f87171);
 }
 </style>

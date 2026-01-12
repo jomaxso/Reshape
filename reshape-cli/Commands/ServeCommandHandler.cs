@@ -55,7 +55,7 @@ internal static class ServeCommandHandler
         {
             try
             {
-                var items = FileService.GeneratePreview(request.FolderPath, request.Pattern, request.Extensions);
+                var items = FileService.GeneratePreview(request.FolderPath, request.Pattern, request.Extensions, request.VacationMode);
                 var conflictCount = items.Count(i => i.HasConflict);
                 return Results.Ok(new RenamePreviewResponse(items, conflictCount));
             }
@@ -69,7 +69,7 @@ internal static class ServeCommandHandler
         {
             try
             {
-                var results = FileService.ExecuteRename(request.Items, request.DryRun);
+                var results = FileService.ExecuteRename(request.Items, request.BaseFolderPath, request.DryRun);
                 return Results.Ok(new RenameExecuteResponse(
                     results,
                     results.Count(r => r.Success),
