@@ -22,7 +22,7 @@ internal static class RenameCommandHandler
             var fullPath = Path.GetFullPath(path);
             var preview = FileService.GeneratePreview(fullPath, pattern, ext != null && ext.Length > 0 ? ext : null);
 
-            if (!dryRun && !noInteractive && !ConfirmRename(preview))
+            if (!dryRun && !noInteractive && !ConfirmRename(preview, fullPath, pattern, ext))
             {
                 AnsiConsole.MarkupLine("[yellow]Operation cancelled[/]");
                 return 0;
@@ -41,10 +41,21 @@ internal static class RenameCommandHandler
         }
     }
 
-    private static bool ConfirmRename(RenamePreviewItem[] preview)
+    private static bool ConfirmRename(RenamePreviewItem[] preview, string path, string pattern, string[]? extensions)
     {
         var filesToRename = preview.Count(p => !p.HasConflict && p.OriginalName != p.NewName);
-        return AnsiConsole.Confirm($"Rename {filesToRename} file(s)?");
+        
+        // Display operation details
+        AnsiConsole.MarkupLine($"[yellow]Path:[/] {Markup.Escape(path)}");
+        AnsiConsole.MarkupLine($"[yellow]Pattern:[/] {Markup.Escape(pattern)}");
+        if (extensions != null && extensions.Length > 0)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Extensions:[/] {string.Join(", ", extensions)}");
+        }
+        AnsiConsole.MarkupLine($"[yellow]Files to rename:[/] {filesToRename}");
+        AnsiConsole.WriteLine();
+        
+        return AnsiConsole.Confirm($"Proceed with rename?");
     }
 
     private static void DisplayResults(RenameResult[] results, bool dryRun)
