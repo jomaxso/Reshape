@@ -19,7 +19,9 @@ internal static class ListCommandHandler
 
             var table = new Table()
                 .Border(TableBorder.Rounded)
+                .AddColumn("[bold]Folder[/]")
                 .AddColumn("[bold]Name[/]")
+                .AddColumn("[bold]Selected[/]")
                 .AddColumn("[bold]Size[/]", c => c.RightAligned())
                 .AddColumn("[bold]Modified[/]")
                 .AddColumn("[bold]Metadata[/]");
@@ -27,8 +29,13 @@ internal static class ListCommandHandler
             foreach (var file in files)
             {
                 var metaPreview = string.Join(", ", file.Metadata.Take(3).Select(m => $"{m.Key}={m.Value}"));
+                var folderDisplay = string.IsNullOrEmpty(file.RelativePath) ? "." : file.RelativePath;
+                var selectedIcon = file.IsSelected ? "[green]✓[/]" : "[dim]○[/]";
+
                 table.AddRow(
+                    $"[dim]{Markup.Escape(folderDisplay)}[/]",
                     $"[cyan]{Markup.Escape(file.Name)}[/]",
+                    selectedIcon,
                     FormatHelper.FormatSize(file.Size),
                     file.ModifiedAt.ToString("yyyy-MM-dd HH:mm"),
                     $"[dim]{Markup.Escape(metaPreview)}...[/]"

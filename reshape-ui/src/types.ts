@@ -3,10 +3,12 @@
 export interface FileInfo {
     name: string;
     fullPath: string;
+    relativePath: string;
     extension: string;
     size: number;
     createdAt: string;
     modifiedAt: string;
+    isSelected: boolean;
     metadata: Record<string, string>;
 }
 
@@ -36,7 +38,9 @@ export interface RenamePreviewItem {
     originalName: string;
     newName: string;
     fullPath: string;
+    relativePath: string;
     hasConflict: boolean;
+    isSelected: boolean;
 }
 
 export interface RenamePreviewResponse {

@@ -10,6 +10,7 @@ using System.Text.Json.Serialization;
 [JsonSerializable(typeof(RenamePattern[]))]
 [JsonSerializable(typeof(RenamePreviewRequest))]
 [JsonSerializable(typeof(RenamePreviewItem))]
+[JsonSerializable(typeof(RenamePreviewItem[]))]
 [JsonSerializable(typeof(RenamePreviewResponse))]
 [JsonSerializable(typeof(RenameExecuteRequest))]
 [JsonSerializable(typeof(RenameResult))]

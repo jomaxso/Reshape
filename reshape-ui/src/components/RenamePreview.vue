@@ -11,7 +11,13 @@ const props = defineProps<{
 const emit = defineEmits<{
     'preview': [pattern: string];
     'execute': [];
+    'toggle-item': [item: RenamePreviewItem];
 }>();
+
+function toggleItemSelection(event: Event, item: RenamePreviewItem) {
+    event.stopPropagation();
+    emit('toggle-item', item);
+}
 
 const selectedPattern = ref('');
 const customPattern = ref('');
@@ -22,11 +28,12 @@ const activePattern = computed(() => {
 
 const stats = computed(() => {
     const total = props.previewItems.length;
+    const selected = props.previewItems.filter(i => i.isSelected).length;
     const conflicts = props.previewItems.filter(i => i.hasConflict).length;
     const unchanged = props.previewItems.filter(i => i.originalName === i.newName).length;
-    const toRename = total - conflicts - unchanged;
+    const toRename = props.previewItems.filter(i => i.isSelected && !i.hasConflict && i.originalName !== i.newName).length;
 
-    return { total, conflicts, unchanged, toRename };
+    return { total, selected, conflicts, unchanged, toRename };
 });
 
 function handlePatternSelect(pattern: string) {
@@ -101,6 +108,7 @@ watch(customPattern, (val) => {
             <div class="preview-header">
                 <h3>👀 Preview</h3>
                 <div class="stats">
+                    <span class="stat selected">{{ stats.selected }}/{{ stats.total }} selected</span>
                     <span class="stat rename">{{ stats.toRename }} to rename</span>
                     <span v-if="stats.conflicts > 0" class="stat conflict">{{ stats.conflicts }} conflicts</span>
                     <span v-if="stats.unchanged > 0" class="stat unchanged">{{ stats.unchanged }} unchanged</span>
@@ -109,7 +117,9 @@ watch(customPattern, (val) => {
 
             <div class="preview-table">
                 <div class="table-header">
+                    <span class="col-checkbox"></span>
                     <span class="col-status"></span>
+                    <span class="col-folder">Folder</span>
                     <span class="col-original">Original</span>
                     <span class="col-arrow"></span>
                     <span class="col-new">New Name</span>
@@ -120,13 +130,21 @@ watch(customPattern, (val) => {
                         'preview-row',
                         {
                             conflict: item.hasConflict,
-                            unchanged: item.originalName === item.newName
+                            unchanged: item.originalName === item.newName,
+                            unselected: !item.isSelected
                         }
                     ]">
+                        <span class="col-checkbox">
+                            <input type="checkbox" :checked="item.isSelected"
+                                @click="toggleItemSelection($event, item)" />
+                        </span>
                         <span class="col-status">
                             <span v-if="item.hasConflict" class="status-icon conflict">⚠️</span>
                             <span v-else-if="item.originalName === item.newName" class="status-icon unchanged">➖</span>
                             <span v-else class="status-icon ok">✅</span>
+                        </span>
+                        <span class="col-folder" :title="item.relativePath">
+                            {{ item.relativePath || '.' }}
                         </span>
                         <span class="col-original">{{ item.originalName }}</span>
                         <span class="col-arrow">→</span>
@@ -291,6 +309,11 @@ h3 {
     border-radius: 12px;
 }
 
+.stat.selected {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196f3;
+}
+
 .stat.rename {
     background: rgba(76, 175, 80, 0.2);
     color: #4caf50;
@@ -314,7 +337,7 @@ h3 {
 
 .table-header {
     display: grid;
-    grid-template-columns: 40px 1fr 30px 1fr;
+    grid-template-columns: 40px 40px 150px 1fr 30px 1fr;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     background: var(--bg-tertiary, #252526);
@@ -331,7 +354,7 @@ h3 {
 
 .preview-row {
     display: grid;
-    grid-template-columns: 40px 1fr 30px 1fr;
+    grid-template-columns: 40px 40px 150px 1fr 30px 1fr;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     border-bottom: 1px solid var(--border-light, #2d2d2d);
@@ -347,8 +370,34 @@ h3 {
     opacity: 0.5;
 }
 
+.preview-row.unselected {
+    opacity: 0.4;
+}
+
+.col-checkbox {
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.col-checkbox input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
 .col-status {
     text-align: center;
+}
+
+.col-folder {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted, #888);
+    font-size: 0.85rem;
+    font-style: italic;
 }
 
 .col-arrow {

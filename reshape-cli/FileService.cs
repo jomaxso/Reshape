@@ -17,19 +17,27 @@ internal static class FileService
         if (!System.IO.Directory.Exists(folderPath))
             throw new DirectoryNotFoundException($"Folder not found: {folderPath}");
 
+        var basePath = System.IO.Path.GetFullPath(folderPath);
+
         var files = System.IO.Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
             .Select(path => new System.IO.FileInfo(path))
             .Where(f => extensions == null || extensions.Length == 0 ||
                         extensions.Any(ext => f.Extension.Equals(ext, StringComparison.OrdinalIgnoreCase)))
-            .Select(f => new FileInfo(
-                Name: f.Name,
-                FullPath: f.FullName,
-                Extension: f.Extension.ToLowerInvariant(),
-                Size: f.Length,
-                CreatedAt: f.CreationTime,
-                ModifiedAt: f.LastWriteTime,
-                Metadata: ExtractMetadata(f.FullName)
-            ))
+            .Select(f =>
+            {
+                var relativePath = System.IO.Path.GetRelativePath(basePath, f.DirectoryName ?? basePath);
+                return new FileInfo(
+                    Name: f.Name,
+                    FullPath: f.FullName,
+                    RelativePath: relativePath == "." ? "" : relativePath,
+                    Extension: f.Extension.ToLowerInvariant(),
+                    Size: f.Length,
+                    CreatedAt: f.CreationTime,
+                    ModifiedAt: f.LastWriteTime,
+                    IsSelected: true,  // Standardmäßig alle selektiert
+                    Metadata: ExtractMetadata(f.FullName)
+                );
+            })
             .OrderBy(f => f.FullPath)
             .ToArray();
 
@@ -159,7 +167,7 @@ internal static class FileService
                              (newName != file.Name && System.IO.File.Exists(System.IO.Path.Combine(folderPath, newName)));
 
             newNames.Add(newName);
-            results.Add(new RenamePreviewItem(file.Name, newName, file.FullPath, hasConflict));
+            results.Add(new RenamePreviewItem(file.Name, newName, file.FullPath, file.RelativePath, hasConflict, file.IsSelected));
         }
 
         return results.ToArray();
@@ -169,7 +177,7 @@ internal static class FileService
     {
         var results = new List<RenameResult>();
 
-        foreach (var item in items.Where(i => !i.HasConflict && i.OriginalName != i.NewName))
+        foreach (var item in items.Where(i => i.IsSelected && !i.HasConflict && i.OriginalName != i.NewName))
         {
             var directory = System.IO.Path.GetDirectoryName(item.FullPath)!;
             var newPath = System.IO.Path.Combine(directory, item.NewName);

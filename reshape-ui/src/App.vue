@@ -107,6 +107,38 @@ async function handleExecute() {
 function handleSelectFile(file: FileInfo) {
   selectedFile.value = selectedFile.value?.fullPath === file.fullPath ? null : file;
 }
+
+// Toggle file selection
+function handleToggleFileSelection(file: FileInfo) {
+  files.value = files.value.map(f =>
+    f.fullPath === file.fullPath
+      ? { ...f, isSelected: !f.isSelected }
+      : f
+  );
+
+  // Also update in preview items if they exist
+  previewItems.value = previewItems.value.map(p =>
+    p.fullPath === file.fullPath
+      ? { ...p, isSelected: !file.isSelected }
+      : p
+  );
+}
+
+// Toggle preview item selection
+function handleTogglePreviewItem(item: RenamePreviewItem) {
+  previewItems.value = previewItems.value.map(p =>
+    p.fullPath === item.fullPath
+      ? { ...p, isSelected: !p.isSelected }
+      : p
+  );
+
+  // Also update in files list
+  files.value = files.value.map(f =>
+    f.fullPath === item.fullPath
+      ? { ...f, isSelected: !item.isSelected }
+      : f
+  );
+}
 </script>
 
 <template>
@@ -133,7 +165,8 @@ function handleSelectFile(file: FileInfo) {
         <!-- Left: File List -->
         <div class="panel files-panel">
           <h2>📂 Files ({{ files.length }})</h2>
-          <FileList :files="files" :selected-file="selectedFile" @select="handleSelectFile" />
+          <FileList :files="files" :selected-file="selectedFile" @select="handleSelectFile"
+            @toggle-selection="handleToggleFileSelection" />
         </div>
 
         <!-- Right: Metadata + Rename -->
@@ -143,7 +176,7 @@ function handleSelectFile(file: FileInfo) {
 
           <!-- Rename Preview -->
           <RenamePreview :patterns="patterns" :preview-items="previewItems" :loading="previewLoading"
-            @preview="handlePreview" @execute="handleExecute" />
+            @preview="handlePreview" @execute="handleExecute" @toggle-item="handleTogglePreviewItem" />
         </div>
       </div>
 

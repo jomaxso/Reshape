@@ -9,7 +9,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     'select': [file: FileInfo];
+    'toggle-selection': [file: FileInfo];
 }>();
+
+function toggleSelection(event: Event, file: FileInfo) {
+    event.stopPropagation();
+    emit('toggle-selection', file);
+}
 
 function formatSize(bytes: number): string {
     const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -52,7 +58,9 @@ const sortedFiles = computed(() => {
 <template>
     <div class="file-list">
         <div class="header">
+            <span class="col-checkbox"></span>
             <span class="col-icon"></span>
+            <span class="col-folder">Folder</span>
             <span class="col-name">Name</span>
             <span class="col-size">Size</span>
             <span class="col-date">Modified</span>
@@ -60,9 +68,15 @@ const sortedFiles = computed(() => {
 
         <div class="files-container">
             <div v-for="file in sortedFiles" :key="file.fullPath"
-                :class="['file-row', { selected: selectedFile?.fullPath === file.fullPath }]"
+                :class="['file-row', { selected: selectedFile?.fullPath === file.fullPath, unselected: !file.isSelected }]"
                 @click="emit('select', file)">
+                <span class="col-checkbox">
+                    <input type="checkbox" :checked="file.isSelected" @click="toggleSelection($event, file)" />
+                </span>
                 <span class="col-icon">{{ getFileIcon(file.extension) }}</span>
+                <span class="col-folder" :title="file.relativePath">
+                    {{ file.relativePath || '.' }}
+                </span>
                 <span class="col-name" :title="file.fullPath">{{ file.name }}</span>
                 <span class="col-size">{{ formatSize(file.size) }}</span>
                 <span class="col-date">{{ formatDate(file.modifiedAt) }}</span>
@@ -86,7 +100,7 @@ const sortedFiles = computed(() => {
 
 .header {
     display: grid;
-    grid-template-columns: 40px 1fr 100px 150px;
+    grid-template-columns: 40px 40px 150px 1fr 100px 150px;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     background: var(--bg-tertiary, #252526);
@@ -105,7 +119,7 @@ const sortedFiles = computed(() => {
 
 .file-row {
     display: grid;
-    grid-template-columns: 40px 1fr 100px 150px;
+    grid-template-columns: 40px 40px 150px 1fr 100px 150px;
     gap: 0.5rem;
     padding: 0.625rem 1rem;
     cursor: pointer;
@@ -122,9 +136,35 @@ const sortedFiles = computed(() => {
     border-left: 3px solid var(--accent-color, #007acc);
 }
 
+.file-row.unselected {
+    opacity: 0.5;
+}
+
+.col-checkbox {
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.col-checkbox input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
 .col-icon {
     text-align: center;
     font-size: 1.1rem;
+}
+
+.col-folder {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted, #888);
+    font-size: 0.85rem;
+    font-style: italic;
 }
 
 .col-name {
