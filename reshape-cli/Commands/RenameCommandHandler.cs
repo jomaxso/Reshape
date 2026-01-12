@@ -11,18 +11,34 @@ internal static class RenameCommandHandler
     {
         try
         {
-            if (string.IsNullOrEmpty(pattern))
+            // Interactive mode: prompt for parameters
+            if (!noInteractive)
             {
-                AnsiConsole.MarkupLine("[red]Error: --pattern is required[/]");
+                path = PromptForPath(path);
+                pattern = PromptForPattern(pattern);
+                ext = PromptForExtensions(ext);
+            }
+            else if (string.IsNullOrEmpty(pattern))
+            {
+                // Non-interactive mode requires pattern
+                AnsiConsole.MarkupLine("[red]Error: --pattern is required in non-interactive mode[/]");
                 return 1;
             }
 
             ext ??= [];
 
             var fullPath = Path.GetFullPath(path);
-            var preview = FileService.GeneratePreview(fullPath, pattern, ext != null && ext.Length > 0 ? ext : null);
+            var preview = FileService.GeneratePreview(fullPath, pattern!, ext != null && ext.Length > 0 ? ext : null);
 
-            if (!dryRun && !noInteractive && !ConfirmRename(preview, fullPath, pattern, ext))
+            // Show preview in interactive mode
+            if (!noInteractive)
+            {
+                DisplayPreviewTable(preview, pattern!);
+                AnsiConsole.WriteLine();
+            }
+
+            // Confirm operation
+            if (!dryRun && !noInteractive && !ConfirmRename(preview))
             {
                 AnsiConsole.MarkupLine("[yellow]Operation cancelled[/]");
                 return 0;
@@ -41,21 +57,137 @@ internal static class RenameCommandHandler
         }
     }
 
-    private static bool ConfirmRename(RenamePreviewItem[] preview, string path, string pattern, string[]? extensions)
+    private static string PromptForPath(string defaultPath)
+    {
+        var path = AnsiConsole.Prompt(
+            new TextPrompt<string>("[yellow]Enter folder path:[/]")
+                .DefaultValue(defaultPath)
+                .AllowEmpty());
+        
+        return string.IsNullOrWhiteSpace(path) ? defaultPath : path;
+    }
+
+    private static string PromptForPattern(string? defaultPattern)
+    {
+        var patterns = FileService.GetPatternTemplates();
+        var choices = new List<string>();
+        
+        // Add well-known patterns
+        foreach (var p in patterns)
+        {
+            choices.Add($"{p.Pattern} - {p.Description}");
+        }
+        
+        // Add custom input option
+        choices.Add("Custom pattern...");
+        
+        // Check for custom patterns file
+        var customPatternsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".reshape",
+            "patterns.json"
+        );
+        
+        // TODO: Load custom patterns from file if exists
+        // For now, just use well-known patterns
+        
+        var selection = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[yellow]Select rename pattern:[/]")
+                .PageSize(10)
+                .AddChoices(choices));
+        
+        if (selection == "Custom pattern...")
+        {
+            return AnsiConsole.Prompt(
+                new TextPrompt<string>("[yellow]Enter custom pattern:[/]")
+                    .DefaultValue(defaultPattern ?? "{filename}")
+                    .AllowEmpty());
+        }
+        
+        // Extract pattern from selection (before the " - " separator)
+        var selectedPattern = selection.Split(" - ")[0];
+        return selectedPattern;
+    }
+
+    private static string[] PromptForExtensions(string[]? defaultExtensions)
+    {
+        var commonExtensions = new[] { ".jpg", ".jpeg", ".png", ".heic", ".gif", ".bmp", ".tiff", ".raw", ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx" };
+        
+        var prompt = new MultiSelectionPrompt<string>()
+            .Title("[yellow]Select file extensions to process:[/]")
+            .PageSize(15)
+            .InstructionsText("[grey](Press [blue]<space>[/] to toggle, [green]<enter>[/] to accept)[/]")
+            .AddChoices(commonExtensions);
+        
+        // Pre-select default extensions if provided
+        if (defaultExtensions != null && defaultExtensions.Length > 0)
+        {
+            foreach (var ext in defaultExtensions)
+            {
+                if (commonExtensions.Contains(ext))
+                {
+                    prompt.Select(ext);
+                }
+            }
+        }
+        
+        var selected = AnsiConsole.Prompt(prompt);
+        
+        return selected.ToArray();
+    }
+
+    private static void DisplayPreviewTable(RenamePreviewItem[] preview, string pattern)
+    {
+        var table = new Table()
+            .Border(TableBorder.Rounded)
+            .AddColumn("[bold]Original[/]")
+            .AddColumn("[bold]→[/]")
+            .AddColumn("[bold]New Name[/]")
+            .AddColumn("[bold]Status[/]");
+
+        foreach (var item in preview)
+        {
+            var status = item.HasConflict ? "[red]⚠ Conflict[/]" :
+                        item.OriginalName == item.NewName ? "[dim]No change[/]" : "[green]✓ OK[/]";
+
+            table.AddRow(
+                $"[cyan]{Markup.Escape(item.OriginalName)}[/]",
+                "→",
+                item.HasConflict ? $"[red]{Markup.Escape(item.NewName)}[/]" : $"[green]{Markup.Escape(item.NewName)}[/]",
+                status
+            );
+        }
+
+        AnsiConsole.Write(new Panel(table)
+        {
+            Header = new PanelHeader("[yellow]Preview - Rename Operations[/]"),
+            Border = BoxBorder.Rounded
+        });
+        
+        AnsiConsole.MarkupLine($"[yellow]Pattern:[/] {Markup.Escape(pattern)}");
+        AnsiConsole.MarkupLine($"[green]{preview.Count(p => !p.HasConflict && p.OriginalName != p.NewName)} file(s) will be renamed[/]");
+
+        if (preview.Any(p => p.HasConflict))
+            AnsiConsole.MarkupLine($"[red]{preview.Count(p => p.HasConflict)} conflict(s) detected[/]");
+    }
+
+    private static bool ConfirmRename(RenamePreviewItem[] preview)
     {
         var filesToRename = preview.Count(p => !p.HasConflict && p.OriginalName != p.NewName);
         
-        // Display operation details
-        AnsiConsole.MarkupLine($"[yellow]Path:[/] {Markup.Escape(path)}");
-        AnsiConsole.MarkupLine($"[yellow]Pattern:[/] {Markup.Escape(pattern)}");
-        if (extensions != null && extensions.Length > 0)
+        if (filesToRename == 0)
         {
-            AnsiConsole.MarkupLine($"[yellow]Extensions:[/] {string.Join(", ", extensions)}");
+            AnsiConsole.MarkupLine("[yellow]No files to rename.[/]");
+            return false;
         }
-        AnsiConsole.MarkupLine($"[yellow]Files to rename:[/] {filesToRename}");
-        AnsiConsole.WriteLine();
         
-        return AnsiConsole.Confirm($"Proceed with rename?");
+        var choice = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title($"[yellow]Proceed with renaming {filesToRename} file(s)?[/]")
+                .AddChoices(new[] { "Yes, continue", "No, abort" }));
+        
+        return choice == "Yes, continue";
     }
 
     private static void DisplayResults(RenameResult[] results, bool dryRun)
