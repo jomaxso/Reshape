@@ -35,10 +35,8 @@ export interface RenamePattern {
     description: string;
 }
 
-export interface CustomPattern {
-    pattern: string;
-    description: string;
-}
+// CustomPattern uses the same structure as RenamePattern
+export type CustomPattern = RenamePattern;
 
 export interface AddPatternRequest {
     pattern: string;

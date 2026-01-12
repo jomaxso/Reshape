@@ -79,7 +79,8 @@ const newDescription = ref('');
 const error = ref('');
 
 const customPatterns = computed(() => {
-    // Custom patterns are those after the default ones
+    // Custom patterns come after the default patterns in the array.
+    // The server guarantees this order: defaults first, then custom patterns.
     return props.patterns.slice(props.defaultPatternCount);
 });
 

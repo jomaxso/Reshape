@@ -10,6 +10,9 @@ import PatternManager from './components/PatternManager.vue';
 import api from './api';
 import type { FileInfo, RenamePattern, RenamePreviewItem, VacationModeOptions } from './types';
 
+// Constants
+const DEFAULT_PATTERN_COUNT = 6; // Number of built-in patterns
+
 // State
 const folderPath = ref('');
 const files = ref<FileInfo[]>([]);
@@ -322,7 +325,7 @@ function handleToggleVacationItem(item: RenamePreviewItem) {
           <PlaceholderReference />
 
           <!-- Pattern Manager -->
-          <PatternManager :patterns="patterns" :default-pattern-count="6" @add="handleAddPattern"
+          <PatternManager :patterns="patterns" :default-pattern-count="DEFAULT_PATTERN_COUNT" @add="handleAddPattern"
             @remove="handleRemovePattern" @refresh="refreshPatterns" />
 
         </div>
