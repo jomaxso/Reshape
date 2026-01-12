@@ -20,29 +20,37 @@ webUiCommand.SetAction(async _ => await ServeCommandHandler.ExecuteAsync());
 
 // List command - Display files
 var listCommand = new Command("list", "List files in a folder");
-var listPathArg = new Argument<string>("path") { Description = "Folder path to scan" };
-listCommand.Add(listPathArg);
+var listPathOpt = new Option<string>("--path")
+{
+    Description = "Folder path to scan (defaults to current directory)",
+    DefaultValueFactory = _ => "."
+};
+listCommand.Add(listPathOpt);
 listCommand.Add(extensionOption);
 listCommand.SetAction(input =>
 {
-    var path = input.GetRequiredValue(listPathArg);
+    var path = input.GetValue(listPathOpt)!;
     var ext = input.GetValue(extensionOption);
     return ListCommandHandler.Execute(path, ext);
 });
 
 // Preview command - Show rename preview
 var previewCommand = new Command("preview", "Preview rename operations");
-var previewPathArg = new Argument<string>("path") { Description = "Folder path" };
+var previewPathOpt = new Option<string>("--path")
+{
+    Description = "Folder path (defaults to current directory)",
+    DefaultValueFactory = _ => "."
+};
 var previewPatternOpt = new Option<string?>("--pattern")
 {
     Description = "Rename pattern (e.g., {year}-{month}-{day}_{filename})"
 };
-previewCommand.Add(previewPathArg);
+previewCommand.Add(previewPathOpt);
 previewCommand.Add(previewPatternOpt);
 previewCommand.Add(extensionOption);
 previewCommand.SetAction(input =>
 {
-    var path = input.GetRequiredValue(previewPathArg);
+    var path = input.GetValue(previewPathOpt)!;
     var pattern = input.GetValue(previewPatternOpt);
     var ext = input.GetValue(extensionOption);
     return PreviewCommandHandler.Execute(path, pattern, ext);
@@ -50,19 +58,23 @@ previewCommand.SetAction(input =>
 
 // Rename command - Execute rename operations
 var renameCommand = new Command("rename", "Execute rename operations");
-var renamePathArg = new Argument<string>("path") { Description = "Folder path" };
+var renamePathOpt = new Option<string>("--path")
+{
+    Description = "Folder path (defaults to current directory)",
+    DefaultValueFactory = _ => "."
+};
 var renamePatternOpt = new Option<string?>("--pattern") { Description = "Rename pattern" };
 var dryRunOpt = new Option<bool>("--dry-run")
 {
     Description = "Preview changes without executing"
 };
-renameCommand.Add(renamePathArg);
+renameCommand.Add(renamePathOpt);
 renameCommand.Add(renamePatternOpt);
 renameCommand.Add(dryRunOpt);
 renameCommand.Add(extensionOption);
 renameCommand.SetAction(input =>
 {
-    var path = input.GetRequiredValue(renamePathArg);
+    var path = input.GetValue(renamePathOpt)!;
     var pattern = input.GetValue(renamePatternOpt);
     var ext = input.GetValue(extensionOption);
     var dryRun = input.GetValue(dryRunOpt);
