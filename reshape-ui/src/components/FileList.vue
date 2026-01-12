@@ -32,13 +32,21 @@ const groupedFiles = computed(() => {
         files.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    // Convert to sorted array
-    return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    // Convert to sorted array with natural (numeric) sorting
+    return Array.from(groups.entries()).sort((a, b) =>
+        a[0].localeCompare(b[0], undefined, { numeric: true, sensitivity: 'base' })
+    );
 });
 
-// Expand all folders by default when files change
+// Keep folders collapsed by default when files change
 watch(() => props.files, () => {
-    expandedFolders.value = new Set(groupedFiles.value.map(([folder]) => folder));
+    // Ordner bleiben zugeklappt, außer sie waren bereits aufgeklappt
+    const currentExpanded = new Set(expandedFolders.value);
+    expandedFolders.value = new Set(
+        Array.from(currentExpanded).filter(folder =>
+            groupedFiles.value.some(([f]) => f === folder)
+        )
+    );
 }, { immediate: true });
 
 function toggleFolder(folder: string) {
@@ -65,10 +73,16 @@ function toggleSelection(event: Event, file: FileInfo) {
 }
 
 function toggleFolderSelection(_folder: string, files: FileInfo[]) {
+    // Wenn alle Dateien ausgewählt sind → alle abwählen
+    // Sonst → alle auswählen
     const allSelected = files.every(f => f.isSelected);
+    const shouldSelect = !allSelected;
+
     for (const file of files) {
-        if (allSelected !== !file.isSelected) continue;
-        emit('toggle-selection', file);
+        // Nur umschalten, wenn der gewünschte Zustand nicht bereits erreicht ist
+        if (file.isSelected !== shouldSelect) {
+            emit('toggle-selection', file);
+        }
     }
 }
 

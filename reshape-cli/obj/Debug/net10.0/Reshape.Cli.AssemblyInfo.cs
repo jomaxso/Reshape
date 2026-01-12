@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Reshape.Cli")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+041e6dde4ac4adc2ee10b10fd8c95172b0a44073")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1df6d0f5e6456317512efe39bf96603cba48cacb")]
 [assembly: System.Reflection.AssemblyProductAttribute("Reshape.Cli")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Reshape.Cli")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
