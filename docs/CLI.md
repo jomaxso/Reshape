@@ -126,10 +126,27 @@ reshape rename <path> [options]
 | `--pattern` | Rename pattern with placeholders | None |
 | `--ext` | Filter by file extensions | All files |
 | `--dry-run` | Preview changes without executing | `false` |
+| `--no-interactive` | Skip confirmation prompts and execute automatically | `false` |
 
 **Example:**
 ```bash
+# Interactive mode (default) - will prompt for confirmation
 $ reshape rename "C:\Photos" --pattern "{date_taken}_{counter:3}" --ext .jpg
+
+Rename 3 file(s)? [y/n] (y): y
+
+Renaming files...
+✓ IMG_0001.jpg → 2024-01-15_001.jpg
+✓ IMG_0002.jpg → 2024-01-15_002.jpg
+✓ photo.jpg → 2024-01-16_001.jpg
+
+Completed: 3 successful, 0 failed
+```
+
+**Non-Interactive Example:**
+```bash
+# Skip confirmation prompt - useful for automation/scripts
+$ reshape rename "C:\Photos" --pattern "{date_taken}_{counter:3}" --ext .jpg --no-interactive
 
 Renaming files...
 ✓ IMG_0001.jpg → 2024-01-15_001.jpg
@@ -263,8 +280,11 @@ Available Pattern Templates
 # Preview first
 reshape preview "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg .png
 
-# Execute if preview looks good
+# Execute if preview looks good (will prompt for confirmation)
 reshape rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg .png
+
+# Execute without confirmation prompt (useful for scripts)
+reshape rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg .png --no-interactive
 ```
 
 ### Organize by Camera Model
@@ -294,3 +314,4 @@ reshape rename "C:\Photos" --pattern "IMG_{year}{month}{day}_{counter:4}" --ext 
 3. **Use specific extensions**: Filter with `--ext` to avoid renaming unwanted files
 4. **Test with small folders**: Try your pattern on a small folder first
 5. **Check for conflicts**: The preview shows conflicts before execution
+6. **Use --no-interactive for scripts**: When automating renames in scripts or CI/CD pipelines, use `--no-interactive` to skip confirmation prompts

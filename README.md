@@ -70,8 +70,11 @@ dotnet run --project reshape-cli/ -- list "C:\Photos" --ext .jpg .png
 # Preview rename operations
 dotnet run --project reshape-cli/ -- preview "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
 
-# Execute rename
+# Execute rename (interactive - will prompt for confirmation)
 dotnet run --project reshape-cli/ -- rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
+
+# Execute rename without confirmation prompt
+dotnet run --project reshape-cli/ -- rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg --no-interactive
 
 # Show available patterns
 dotnet run --project reshape-cli/ -- patterns
@@ -103,6 +106,7 @@ dotnet run --project reshape-cli/ -- serve
 | `--ext` | Filter by file extensions (e.g., `.jpg .png .heic`) |
 | `--pattern` | Rename pattern with placeholders |
 | `--dry-run` | Preview changes without executing |
+| `--no-interactive` | Skip confirmation prompts and execute automatically |
 
 ## 🌐 Web UI
 
