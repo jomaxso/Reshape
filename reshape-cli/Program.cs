@@ -29,7 +29,7 @@ listCommand.Add(listPathOpt);
 listCommand.Add(extensionOption);
 listCommand.SetAction(input =>
 {
-    var path = input.GetValue(listPathOpt) ?? ".";
+    var path = input.GetValue(listPathOpt)!;
     var ext = input.GetValue(extensionOption);
     return ListCommandHandler.Execute(path, ext);
 });
@@ -50,7 +50,7 @@ previewCommand.Add(previewPatternOpt);
 previewCommand.Add(extensionOption);
 previewCommand.SetAction(input =>
 {
-    var path = input.GetValue(previewPathOpt) ?? ".";
+    var path = input.GetValue(previewPathOpt)!;
     var pattern = input.GetValue(previewPatternOpt);
     var ext = input.GetValue(extensionOption);
     return PreviewCommandHandler.Execute(path, pattern, ext);
@@ -74,7 +74,7 @@ renameCommand.Add(dryRunOpt);
 renameCommand.Add(extensionOption);
 renameCommand.SetAction(input =>
 {
-    var path = input.GetValue(renamePathOpt) ?? ".";
+    var path = input.GetValue(renamePathOpt)!;
     var pattern = input.GetValue(renamePatternOpt);
     var ext = input.GetValue(extensionOption);
     var dryRun = input.GetValue(dryRunOpt);
