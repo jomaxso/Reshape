@@ -7,7 +7,7 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal static class RenameCommandHandler
 {
-    public static int Execute(string path, string? pattern, string[]? ext, bool dryRun)
+    public static int Execute(string path, string? pattern, string[]? ext, bool dryRun, bool noInteractive = false)
     {
         try
         {
@@ -22,7 +22,7 @@ internal static class RenameCommandHandler
             var fullPath = Path.GetFullPath(path);
             var preview = FileService.GeneratePreview(fullPath, pattern, ext != null && ext.Length > 0 ? ext : null);
 
-            if (!dryRun && !ConfirmRename(preview))
+            if (!dryRun && !noInteractive && !ConfirmRename(preview))
             {
                 AnsiConsole.MarkupLine("[yellow]Operation cancelled[/]");
                 return 0;

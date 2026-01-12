@@ -68,9 +68,14 @@ var dryRunOpt = new Option<bool>("--dry-run")
 {
     Description = "Preview changes without executing"
 };
+var noInteractiveOpt = new Option<bool>("--no-interactive")
+{
+    Description = "Skip confirmation prompts and execute automatically"
+};
 renameCommand.Add(renamePathOpt);
 renameCommand.Add(renamePatternOpt);
 renameCommand.Add(dryRunOpt);
+renameCommand.Add(noInteractiveOpt);
 renameCommand.Add(extensionOption);
 renameCommand.SetAction(input =>
 {
@@ -78,7 +83,8 @@ renameCommand.SetAction(input =>
     var pattern = input.GetValue(renamePatternOpt);
     var ext = input.GetValue(extensionOption);
     var dryRun = input.GetValue(dryRunOpt);
-    return RenameCommandHandler.Execute(path, pattern, ext, dryRun);
+    var noInteractive = input.GetValue(noInteractiveOpt);
+    return RenameCommandHandler.Execute(path, pattern, ext, dryRun, noInteractive);
 });
 
 // Patterns command - Show available patterns
