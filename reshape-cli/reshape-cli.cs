@@ -20,14 +20,13 @@ var webUiCommand = new Command("serve", "Starts the Reshape web user interface")
 
 webUiCommand.SetAction(async _ =>
 {
-    var builder = WebApplication.CreateSlimBuilder();
+    var builder = WebApplication.CreateBuilder();
 
     builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
     builder.Services.ConfigureHttpJsonOptions(options =>
     {
-        options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
     });
 
     var ui = builder.Build();
@@ -190,8 +189,13 @@ previewCommand.Options.Add(extensionOption);
 previewCommand.SetAction(input =>
 {
     var path = input.GetRequiredValue<string>("path");
-    var pattern = input.GetRequiredValue<string>("pattern");
-    var ext = input.GetValue<string[]>("ext") ?? [];
+    var pattern = input.GetValue<string>("--pattern");
+    if (string.IsNullOrEmpty(pattern))
+    {
+        AnsiConsole.MarkupLine("[red]Error: --pattern is required[/]");
+        return 1;
+    }
+    var ext = input.GetValue<string[]>("--ext") ?? [];
     try
     {
         var fullPath = Path.GetFullPath(path);
@@ -223,10 +227,12 @@ previewCommand.SetAction(input =>
 
         if (preview.Any(p => p.HasConflict))
             AnsiConsole.MarkupLine($"[red]{preview.Count(p => p.HasConflict)} conflict(s) detected[/]");
+        return 0;
     }
     catch (Exception ex)
     {
         AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+        return 1;
     }
 });
 
@@ -246,9 +252,14 @@ renameCommand.SetAction(input =>
     try
     {
         var path = input.GetRequiredValue<string>("path");
-        var pattern = input.GetRequiredValue<string>("pattern");
-        var ext = input.GetValue<string[]>("ext") ?? [];
-        var dryRun = input.GetValue<bool>("dry-run");
+        var pattern = input.GetValue<string>("--pattern");
+        if (string.IsNullOrEmpty(pattern))
+        {
+            AnsiConsole.MarkupLine("[red]Error: --pattern is required[/]");
+            return 1;
+        }
+        var ext = input.GetValue<string[]>("--ext") ?? [];
+        var dryRun = input.GetValue<bool>("--dry-run");
 
         var fullPath = Path.GetFullPath(path);
         var preview = FileService.GeneratePreview(fullPath, pattern, ext != null && ext.Length > 0 ? ext : null);
@@ -259,7 +270,7 @@ renameCommand.SetAction(input =>
             if (!confirm)
             {
                 AnsiConsole.MarkupLine("[yellow]Operation cancelled[/]");
-                return;
+                return 0;
             }
         }
 
@@ -280,12 +291,14 @@ renameCommand.SetAction(input =>
             AnsiConsole.MarkupLine("\n[yellow]Dry run - no files were changed[/]");
         else
             AnsiConsole.MarkupLine($"\n[green]Successfully renamed {results.Count(r => r.Success)} file(s)[/]");
+        return 0;
     }
     catch (Exception ex)
     {
         AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+        return 1;
     }
-}, renamePathArg, renamePatternOption, extensionOption, dryRunOption);
+});
 
 // Patterns command
 var patternsCommand = new Command("patterns", "Show available pattern templates");
@@ -319,7 +332,7 @@ patternsCommand.SetAction(input =>
 var rootCommand = new RootCommand("Reshape CLI - Batch rename files using metadata patterns");
 
 rootCommand.Subcommands.Add(webUiCommand);
-rootCommand.Subcommands.Add(patternsCommand);
+rootCommand.Subcommands.Add(listCommand);
 rootCommand.Subcommands.Add(previewCommand);
 rootCommand.Subcommands.Add(renameCommand);
 rootCommand.Subcommands.Add(patternsCommand);
@@ -366,6 +379,30 @@ record RenamePreviewResponse(RenamePreviewItem[] Items, int ConflictCount);
 record RenameExecuteRequest(RenamePreviewItem[] Items, bool DryRun = false);
 record RenameResult(string OriginalPath, string NewPath, bool Success, string? Error);
 record RenameExecuteResponse(RenameResult[] Results, int SuccessCount, int ErrorCount);
+
+// ============================================================================
+// JSON Serializer Context for Source Generation
+// ============================================================================
+
+[JsonSerializable(typeof(FileInfo))]
+[JsonSerializable(typeof(ScanRequest))]
+[JsonSerializable(typeof(ScanResponse))]
+[JsonSerializable(typeof(RenamePattern))]
+[JsonSerializable(typeof(RenamePattern[]))]
+[JsonSerializable(typeof(RenamePreviewRequest))]
+[JsonSerializable(typeof(RenamePreviewItem))]
+[JsonSerializable(typeof(RenamePreviewResponse))]
+[JsonSerializable(typeof(RenameExecuteRequest))]
+[JsonSerializable(typeof(RenameResult))]
+[JsonSerializable(typeof(RenameExecuteResponse))]
+[JsonSerializable(typeof(Dictionary<string, string>))]
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    WriteIndented = false)]
+internal partial class AppJsonSerializerContext : JsonSerializerContext
+{
+}
 
 // ============================================================================
 // File Operations Service
