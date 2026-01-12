@@ -456,12 +456,5 @@ internal static class FileService
     }
 
     public static RenamePattern[] GetPatternTemplates() =>
-    [
-        new("{year}-{month}-{day}_{filename}", "Date prefix: 2024-01-15_photo"),
-        new("{date_taken}_{time_taken}_{filename}", "EXIF date/time: 2024-01-15_14-30-00_photo"),
-        new("{year}/{month}/{filename}", "Year/Month folders (use with caution)"),
-        new("{camera_model}_{date_taken}_{counter:4}", "Camera + date + counter: iPhone_2024-01-15_0001"),
-        new("{filename}_{counter:3}", "Original name + counter: photo_001"),
-        new("IMG_{year}{month}{day}_{counter:4}", "Standard format: IMG_20240115_0001"),
-    ];
+        ConfigurationService.GetAllPatterns();
 }

@@ -9,23 +9,52 @@ internal static class PatternsCommandHandler
 {
     public static int Execute()
     {
-        var patterns = FileService.GetPatternTemplates();
+        var defaultPatterns = ConfigurationService.GetDefaultPatterns();
+        var customPatterns = ConfigurationService.LoadCustomPatterns();
 
-        var table = new Table()
+        // Display default patterns
+        var defaultTable = new Table()
             .Border(TableBorder.Rounded)
             .AddColumn("[bold]Pattern[/]")
             .AddColumn("[bold]Description[/]");
 
-        foreach (var p in patterns)
+        foreach (var p in defaultPatterns)
         {
-            table.AddRow($"[cyan]{Markup.Escape(p.Pattern)}[/]", p.Description);
+            defaultTable.AddRow($"[cyan]{Markup.Escape(p.Pattern)}[/]", Markup.Escape(p.Description));
         }
 
-        AnsiConsole.Write(new Panel(table)
+        AnsiConsole.Write(new Panel(defaultTable)
         {
-            Header = new PanelHeader("[yellow]📝 Available Patterns[/]"),
+            Header = new PanelHeader("[yellow]📝 Default Patterns[/]"),
             Border = BoxBorder.Double
         });
+
+        // Display custom patterns if any exist
+        if (customPatterns.Any())
+        {
+            AnsiConsole.WriteLine();
+            
+            var customTable = new Table()
+                .Border(TableBorder.Rounded)
+                .AddColumn("[bold]Pattern[/]")
+                .AddColumn("[bold]Description[/]");
+
+            foreach (var p in customPatterns)
+            {
+                customTable.AddRow($"[green]{Markup.Escape(p.Pattern)}[/]", Markup.Escape(p.Description));
+            }
+
+            AnsiConsole.Write(new Panel(customTable)
+            {
+                Header = new PanelHeader("[yellow]⭐ Custom Patterns[/]"),
+                Border = BoxBorder.Double
+            });
+        }
+        else
+        {
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[dim]No custom patterns defined. Use 'pattern add' to create one.[/]");
+        }
 
         DisplayPlaceholderInfo();
 

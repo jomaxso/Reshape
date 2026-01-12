@@ -91,12 +91,56 @@ renameCommand.SetAction(input =>
 var patternsCommand = new Command("patterns", "Show available pattern templates");
 patternsCommand.SetAction(_ => PatternsCommandHandler.Execute());
 
+// Pattern command group - Manage custom patterns
+var patternCommand = new Command("pattern", "Manage custom rename patterns");
+
+// Pattern add subcommand
+var patternAddCommand = new Command("add", "Add a new custom pattern");
+var patternAddPatternArg = new Argument<string>("pattern")
+{
+    Description = "The pattern string (e.g., {year}-{month}-{day}_{filename})"
+};
+var patternAddDescArg = new Argument<string>("description")
+{
+    Description = "Description of the pattern"
+};
+patternAddCommand.Add(patternAddPatternArg);
+patternAddCommand.Add(patternAddDescArg);
+patternAddCommand.SetAction(input =>
+{
+    var pattern = input.GetValue(patternAddPatternArg)!;
+    var description = input.GetValue(patternAddDescArg)!;
+    return PatternManageCommandHandler.Add(pattern, description);
+});
+
+// Pattern remove subcommand
+var patternRemoveCommand = new Command("remove", "Remove a custom pattern");
+var patternRemovePatternArg = new Argument<string>("pattern")
+{
+    Description = "The pattern string to remove"
+};
+patternRemoveCommand.Add(patternRemovePatternArg);
+patternRemoveCommand.SetAction(input =>
+{
+    var pattern = input.GetValue(patternRemovePatternArg)!;
+    return PatternManageCommandHandler.Remove(pattern);
+});
+
+// Pattern list subcommand
+var patternListCommand = new Command("list", "List all patterns (default and custom)");
+patternListCommand.SetAction(_ => PatternManageCommandHandler.List());
+
+patternCommand.Subcommands.Add(patternAddCommand);
+patternCommand.Subcommands.Add(patternRemoveCommand);
+patternCommand.Subcommands.Add(patternListCommand);
+
 // Register all commands
 rootCommand.Subcommands.Add(webUiCommand);
 rootCommand.Subcommands.Add(listCommand);
 rootCommand.Subcommands.Add(previewCommand);
 rootCommand.Subcommands.Add(renameCommand);
 rootCommand.Subcommands.Add(patternsCommand);
+rootCommand.Subcommands.Add(patternCommand);
 
 return await rootCommand.Parse(args).InvokeAsync();
 

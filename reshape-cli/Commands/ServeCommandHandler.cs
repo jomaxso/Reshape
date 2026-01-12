@@ -51,6 +51,43 @@ internal static class ServeCommandHandler
 
         api.MapGet("/patterns", () => Results.Ok(FileService.GetPatternTemplates()));
 
+        api.MapPost("/patterns/add", (AddPatternRequest request) =>
+        {
+            try
+            {
+                ConfigurationService.AddCustomPattern(request.Pattern, request.Description);
+                return Results.Ok(new PatternResponse(true, "Pattern added successfully"));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new PatternResponse(false, ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(new PatternResponse(false, $"Failed to add pattern: {ex.Message}"));
+            }
+        });
+
+        api.MapPost("/patterns/remove", (RemovePatternRequest request) =>
+        {
+            try
+            {
+                var removed = ConfigurationService.RemoveCustomPattern(request.Pattern);
+                if (removed)
+                {
+                    return Results.Ok(new PatternResponse(true, "Pattern removed successfully"));
+                }
+                else
+                {
+                    return Results.NotFound(new PatternResponse(false, "Pattern not found"));
+                }
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(new PatternResponse(false, $"Failed to remove pattern: {ex.Message}"));
+            }
+        });
+
         api.MapPost("/preview", (RenamePreviewRequest request) =>
         {
             try
