@@ -17,7 +17,7 @@ internal static class FileService
         if (!System.IO.Directory.Exists(folderPath))
             throw new DirectoryNotFoundException($"Folder not found: {folderPath}");
 
-        var files = System.IO.Directory.GetFiles(folderPath)
+        var files = System.IO.Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
             .Select(path => new System.IO.FileInfo(path))
             .Where(f => extensions == null || extensions.Length == 0 ||
                         extensions.Any(ext => f.Extension.Equals(ext, StringComparison.OrdinalIgnoreCase)))
@@ -30,7 +30,7 @@ internal static class FileService
                 ModifiedAt: f.LastWriteTime,
                 Metadata: ExtractMetadata(f.FullName)
             ))
-            .OrderBy(f => f.Name)
+            .OrderBy(f => f.FullPath)
             .ToArray();
 
         return files;
