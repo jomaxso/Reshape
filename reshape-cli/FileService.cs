@@ -293,26 +293,30 @@ internal static class FileService
     {
         var results = new List<RenamePreviewItem>();
 
-        // Find files with valid UTC dates
-        var filesWithDates = files
-            .Where(f => f.DateTakenUtc.HasValue)
-            .OrderBy(f => f.DateTakenUtc!.Value)
+        // Get effective date for each file: prefer DateTakenUtc, fallback to CreatedAt
+        var filesWithEffectiveDates = files
+            .Select(f => new
+            {
+                File = f,
+                EffectiveDate = f.DateTakenUtc ?? f.CreatedAt
+            })
+            .OrderBy(f => f.EffectiveDate)
             .ToList();
 
-        if (!filesWithDates.Any())
+        if (!filesWithEffectiveDates.Any())
         {
-            // Fallback to standard preview if no dates found
+            // Fallback to standard preview if no files
             return GenerateStandardPreview(files, folderPath, pattern);
         }
 
         // Determine start date
-        var startDate = vacationMode.StartDate ?? filesWithDates.First().DateTakenUtc!.Value.Date;
+        var startDate = vacationMode.StartDate ?? filesWithEffectiveDates.First().EffectiveDate.Date;
 
         // Group files by day number
-        var filesByDay = filesWithDates
+        var filesByDay = filesWithEffectiveDates
             .GroupBy(f =>
             {
-                var daysDiff = (f.DateTakenUtc!.Value.Date - startDate).Days + 1;
+                var daysDiff = (f.EffectiveDate.Date - startDate).Days + 1;
                 return daysDiff > 0 ? daysDiff : 1;
             })
             .OrderBy(g => g.Key)
@@ -332,8 +336,10 @@ internal static class FileService
                 .Replace("{day}", dayNumber.ToString("D2"), StringComparison.OrdinalIgnoreCase);
             dayFolderName = SanitizeForFilename(dayFolderName);
 
-            foreach (var file in dayGroup.OrderBy(f => f.DateTakenUtc))
+            foreach (var item in dayGroup.OrderBy(f => f.EffectiveDate))
             {
+                var file = item.File;
+
                 // Apply pattern with additional placeholders
                 var metadata = new Dictionary<string, string>(file.Metadata)
                 {
@@ -387,21 +393,6 @@ internal static class FileService
                 dayCounter++;
                 globalCounter++;
             }
-        }
-
-        // Add files without dates at the end (not in day folders)
-        var filesWithoutDates = files.Where(f => !f.DateTakenUtc.HasValue).ToList();
-        foreach (var file in filesWithoutDates)
-        {
-            results.Add(new RenamePreviewItem(
-                file.Name,
-                file.Name,  // Keep original name
-                file.FullPath,
-                file.RelativePath,
-                false,
-                false,  // Deselect files without dates
-                null
-            ));
         }
 
         return results.ToArray();
