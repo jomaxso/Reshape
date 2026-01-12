@@ -7,6 +7,9 @@ import type {
     RenameExecuteRequest,
     RenameExecuteResponse,
     VacationModeOptions,
+    AddPatternRequest,
+    RemovePatternRequest,
+    PatternResponse,
 } from './types';
 
 const API_BASE = '/api';
@@ -88,6 +91,28 @@ export const api = {
     async getFileMetadata(filePath: string): Promise<Record<string, string>> {
         const encodedPath = encodeURIComponent(filePath);
         return request<Record<string, string>>(`/metadata/${encodedPath}`);
+    },
+
+    /**
+     * Add a custom pattern
+     */
+    async addPattern(pattern: string, description: string): Promise<PatternResponse> {
+        const body: AddPatternRequest = { pattern, description };
+        return request<PatternResponse>('/patterns/add', {
+            method: 'POST',
+            body: JSON.stringify(body),
+        });
+    },
+
+    /**
+     * Remove a custom pattern
+     */
+    async removePattern(pattern: string): Promise<PatternResponse> {
+        const body: RemovePatternRequest = { pattern };
+        return request<PatternResponse>('/patterns/remove', {
+            method: 'POST',
+            body: JSON.stringify(body),
+        });
     },
 };
 

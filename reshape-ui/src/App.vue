@@ -6,6 +6,7 @@ import MetadataPanel from './components/MetadataPanel.vue';
 import VacationModePanel from './components/VacationModePanel.vue';
 import GeneralModePanel from './components/GeneralModePanel.vue';
 import PlaceholderReference from './components/PlaceholderReference.vue';
+import PatternManager from './components/PatternManager.vue';
 import api from './api';
 import type { FileInfo, RenamePattern, RenamePreviewItem, VacationModeOptions } from './types';
 
@@ -49,6 +50,39 @@ onMounted(async () => {
     console.error('Failed to load patterns:', e);
   }
 });
+
+// Refresh patterns
+async function refreshPatterns() {
+  try {
+    patterns.value = await api.getPatterns();
+  } catch (e) {
+    console.error('Failed to refresh patterns:', e);
+  }
+}
+
+// Add custom pattern
+async function handleAddPattern(pattern: string, description: string) {
+  try {
+    const response = await api.addPattern(pattern, description);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to add pattern');
+    }
+  } catch (e) {
+    throw e;
+  }
+}
+
+// Remove custom pattern
+async function handleRemovePattern(pattern: string) {
+  try {
+    const response = await api.removePattern(pattern);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to remove pattern');
+    }
+  } catch (e) {
+    throw e;
+  }
+}
 
 // Scan folder
 async function handleScan() {
@@ -286,6 +320,10 @@ function handleToggleVacationItem(item: RenamePreviewItem) {
 
           <!-- Placeholder Reference (for all modes) -->
           <PlaceholderReference />
+
+          <!-- Pattern Manager -->
+          <PatternManager :patterns="patterns" :default-pattern-count="6" @add="handleAddPattern"
+            @remove="handleRemovePattern" @refresh="refreshPatterns" />
 
         </div>
       </div>

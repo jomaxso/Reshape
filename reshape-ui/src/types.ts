@@ -35,6 +35,25 @@ export interface RenamePattern {
     description: string;
 }
 
+export interface CustomPattern {
+    pattern: string;
+    description: string;
+}
+
+export interface AddPatternRequest {
+    pattern: string;
+    description: string;
+}
+
+export interface RemovePatternRequest {
+    pattern: string;
+}
+
+export interface PatternResponse {
+    success: boolean;
+    message?: string;
+}
+
 export interface VacationModeOptions {
     enabled: boolean;
     startDate?: string;
