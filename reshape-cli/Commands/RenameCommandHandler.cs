@@ -70,26 +70,20 @@ internal static class RenameCommandHandler
     private static string PromptForPattern(string? defaultPattern)
     {
         var patterns = FileService.GetPatternTemplates();
+        var patternMap = new Dictionary<string, string>();
         var choices = new List<string>();
         
         // Add well-known patterns
         foreach (var p in patterns)
         {
-            choices.Add($"{p.Pattern} - {p.Description}");
+            var displayText = $"{p.Pattern} - {p.Description}";
+            choices.Add(displayText);
+            patternMap[displayText] = p.Pattern;
         }
         
         // Add custom input option
-        choices.Add("Custom pattern...");
-        
-        // Check for custom patterns file
-        var customPatternsPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".reshape",
-            "patterns.json"
-        );
-        
-        // TODO: Load custom patterns from file if exists
-        // For now, just use well-known patterns
+        const string customOption = "Custom pattern...";
+        choices.Add(customOption);
         
         var selection = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
@@ -97,35 +91,44 @@ internal static class RenameCommandHandler
                 .PageSize(10)
                 .AddChoices(choices));
         
-        if (selection == "Custom pattern...")
+        if (selection == customOption)
         {
-            return AnsiConsole.Prompt(
+            var customPattern = AnsiConsole.Prompt(
                 new TextPrompt<string>("[yellow]Enter custom pattern:[/]")
                     .DefaultValue(defaultPattern ?? "{filename}")
-                    .AllowEmpty());
+                    .Validate(pattern => 
+                    {
+                        if (string.IsNullOrWhiteSpace(pattern))
+                            return ValidationResult.Error("Pattern cannot be empty");
+                        return ValidationResult.Success();
+                    }));
+            return customPattern;
         }
         
-        // Extract pattern from selection (before the " - " separator)
-        var selectedPattern = selection.Split(" - ")[0];
-        return selectedPattern;
+        // Get pattern from map
+        return patternMap[selection];
     }
+
+    private static readonly string[] CommonExtensions = 
+    [
+        ".jpg", ".jpeg", ".png", ".heic", ".gif", ".bmp", ".tiff", ".raw", 
+        ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx"
+    ];
 
     private static string[] PromptForExtensions(string[]? defaultExtensions)
     {
-        var commonExtensions = new[] { ".jpg", ".jpeg", ".png", ".heic", ".gif", ".bmp", ".tiff", ".raw", ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx" };
-        
         var prompt = new MultiSelectionPrompt<string>()
             .Title("[yellow]Select file extensions to process:[/]")
             .PageSize(15)
             .InstructionsText("[grey](Press [blue]<space>[/] to toggle, [green]<enter>[/] to accept)[/]")
-            .AddChoices(commonExtensions);
+            .AddChoices(CommonExtensions);
         
         // Pre-select default extensions if provided
         if (defaultExtensions != null && defaultExtensions.Length > 0)
         {
             foreach (var ext in defaultExtensions)
             {
-                if (commonExtensions.Contains(ext))
+                if (CommonExtensions.Contains(ext))
                 {
                     prompt.Select(ext);
                 }
