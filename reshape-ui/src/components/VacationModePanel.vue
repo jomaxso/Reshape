@@ -108,9 +108,14 @@
                             <div class="item-names">
                                 <span class="item-original">{{ item.originalName }}</span>
                                 <span class="item-arrow">→</span>
-                                <span :class="['item-new', { changed: item.originalName !== item.newName }]">
-                                    {{ item.newName }}
-                                </span>
+                                <div :class="['item-new-container', { changed: item.originalName !== item.newName }]">
+                                    <span v-if="splitPath(item.newName).folder" class="item-new-folder">
+                                        📁 {{ splitPath(item.newName).folder }}/
+                                    </span>
+                                    <span class="item-new-filename">
+                                        {{ splitPath(item.newName).filename }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -183,6 +188,18 @@ const stats = computed(() => {
 });
 
 const canExecute = computed(() => stats.value.toRename > 0 && !props.loading);
+
+// Helper to split path into folder and filename
+function splitPath(path: string): { folder: string; filename: string } {
+    const lastSlash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+    if (lastSlash === -1) {
+        return { folder: '', filename: path };
+    }
+    return {
+        folder: path.substring(0, lastSlash),
+        filename: path.substring(lastSlash + 1)
+    };
+}
 
 function toggleMode() {
     emit('mode-change', !props.isActive);
@@ -674,6 +691,39 @@ watch(() => props.files, (newFiles) => {
 .item-arrow {
     color: var(--text-dim, #4b5563);
     flex-shrink: 0;
+}
+
+.item-new-container {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
+}
+
+.item-new-container.changed {
+    color: var(--vacation-color, #f59e0b);
+}
+
+.item-new-folder {
+    color: var(--accent-color, #4a90d9);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.item-new-filename {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary, #b8bcc4);
+}
+
+.item-new-container.changed .item-new-filename {
+    color: var(--vacation-color, #f59e0b);
 }
 
 .item-new {

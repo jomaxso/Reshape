@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import type { FileInfo } from '../types';
+import type { FileInfo, RenamePreviewItem } from '../types';
 
 const props = defineProps<{
     files: FileInfo[];
     selectedFile?: FileInfo | null;
+    previewItems?: RenamePreviewItem[];
 }>();
 
 const emit = defineEmits<{
@@ -15,37 +16,148 @@ const emit = defineEmits<{
 // Track expanded folders
 const expandedFolders = ref<Set<string>>(new Set());
 
-// Group files by folder
-const groupedFiles = computed(() => {
-    const groups = new Map<string, FileInfo[]>();
+// Build folder tree from preview items or current file paths
+interface FolderNode {
+    name: string;
+    path: string;
+    files: FileInfo[];
+    subfolders: Map<string, FolderNode>;
+    level: number;
+}
 
-    for (const file of props.files) {
-        const folder = file.relativePath || '.';
-        if (!groups.has(folder)) {
-            groups.set(folder, []);
+function buildFolderTree(): FolderNode {
+    const root: FolderNode = {
+        name: '.',
+        path: '',
+        files: [],
+        subfolders: new Map(),
+        level: 0
+    };
+
+    // If we have preview items, use those to build the tree
+    if (props.previewItems && props.previewItems.length > 0) {
+        for (const preview of props.previewItems) {
+            const file = props.files.find(f => f.fullPath === preview.fullPath);
+            if (!file) continue;
+
+            const newPath = preview.newName;
+            const parts = newPath.split(/[\\/]/).filter(p => p.length > 0);
+
+            if (parts.length === 1) {
+                // File in root
+                root.files.push(file);
+            } else {
+                // File in subfolder(s)
+                let current = root;
+                for (let i = 0; i < parts.length - 1; i++) {
+                    const folderName = parts[i];
+                    if (!folderName) continue; // Skip undefined
+                    const folderPath = parts.slice(0, i + 1).join('/');
+
+                    if (!current.subfolders.has(folderName)) {
+                        current.subfolders.set(folderName, {
+                            name: folderName,
+                            path: folderPath,
+                            files: [],
+                            subfolders: new Map(),
+                            level: i + 1
+                        });
+                    }
+                    current = current.subfolders.get(folderName)!;
+                }
+                current.files.push(file);
+            }
         }
-        groups.get(folder)!.push(file);
+    } else {
+        // No preview - use original file structure
+        for (const file of props.files) {
+            const folder = file.relativePath || '.';
+            if (folder === '.') {
+                root.files.push(file);
+            } else {
+                const parts = folder.split(/[\\/]/).filter(p => p.length > 0);
+                let current = root;
+                for (let i = 0; i < parts.length; i++) {
+                    const folderName = parts[i];
+                    if (!folderName) continue; // Skip undefined
+                    const folderPath = parts.slice(0, i + 1).join('/');
+
+                    if (!current.subfolders.has(folderName)) {
+                        current.subfolders.set(folderName, {
+                            name: folderName,
+                            path: folderPath,
+                            files: [],
+                            subfolders: new Map(),
+                            level: i + 1
+                        });
+                    }
+                    current = current.subfolders.get(folderName)!;
+                }
+                current.files.push(file);
+            }
+        }
     }
 
-    // Sort files within each group
-    for (const files of groups.values()) {
-        files.sort((a, b) => a.name.localeCompare(b.name));
-    }
+    return root;
+}
 
-    // Convert to sorted array with natural (numeric) sorting
-    return Array.from(groups.entries()).sort((a, b) =>
-        a[0].localeCompare(b[0], undefined, { numeric: true, sensitivity: 'base' })
+const folderTree = computed(() => buildFolderTree());
+
+// Flatten tree for easier rendering
+interface FlatFolderItem {
+    node: FolderNode;
+    isExpanded: boolean;
+}
+
+function flattenTree(node: FolderNode, result: FlatFolderItem[] = []): FlatFolderItem[] {
+    // Add subfolders
+    const sortedFolders = Array.from(node.subfolders.values()).sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true })
     );
+
+    for (const subfolder of sortedFolders) {
+        const isExpanded = expandedFolders.value.has(subfolder.path);
+        result.push({ node: subfolder, isExpanded });
+
+        if (isExpanded) {
+            flattenTree(subfolder, result);
+        }
+    }
+
+    return result;
+}
+
+const flatFolders = computed(() => {
+    const result: FlatFolderItem[] = [];
+
+    // Add root files if any
+    if (folderTree.value.files.length > 0) {
+        result.push({ node: folderTree.value, isExpanded: true });
+    }
+
+    // Add all subfolders
+    flattenTree(folderTree.value, result);
+
+    return result;
 });
 
 // Keep folders collapsed by default when files change
-watch(() => props.files, () => {
+watch([() => props.files, () => props.previewItems], () => {
     // Ordner bleiben zugeklappt, außer sie waren bereits aufgeklappt
     const currentExpanded = new Set(expandedFolders.value);
+    const allFolderPaths = new Set<string>();
+
+    // Collect all folder paths from tree
+    function collectPaths(node: FolderNode) {
+        for (const subfolder of node.subfolders.values()) {
+            allFolderPaths.add(subfolder.path);
+            collectPaths(subfolder);
+        }
+    }
+    collectPaths(folderTree.value);
+
     expandedFolders.value = new Set(
-        Array.from(currentExpanded).filter(folder =>
-            groupedFiles.value.some(([f]) => f === folder)
-        )
+        Array.from(currentExpanded).filter(folder => allFolderPaths.has(folder))
     );
 }, { immediate: true });
 
@@ -61,7 +173,15 @@ function toggleFolder(folder: string) {
 
 function toggleAllFolders(expand: boolean) {
     if (expand) {
-        expandedFolders.value = new Set(groupedFiles.value.map(([folder]) => folder));
+        const allPaths = new Set<string>();
+        function collectPaths(node: FolderNode) {
+            for (const subfolder of node.subfolders.values()) {
+                allPaths.add(subfolder.path);
+                collectPaths(subfolder);
+            }
+        }
+        collectPaths(folderTree.value);
+        expandedFolders.value = allPaths;
     } else {
         expandedFolders.value = new Set();
     }
@@ -152,33 +272,36 @@ const stats = computed(() => {
 
         <!-- File Tree -->
         <div class="files-container">
-            <template v-if="groupedFiles.length > 0">
-                <div v-for="[folder, folderFiles] in groupedFiles" :key="folder" class="folder-group">
+            <template v-if="flatFolders.length > 0">
+                <div v-for="item in flatFolders" :key="item.node.path || 'root'" class="folder-group">
                     <!-- Folder Header -->
-                    <div class="folder-header" @click="toggleFolder(folder)">
+                    <div class="folder-header" :style="{ paddingLeft: `${item.node.level * 1.25}rem` }"
+                        @click="toggleFolder(item.node.path)">
                         <span class="folder-toggle">
-                            {{ expandedFolders.has(folder) ? '▼' : '▶' }}
+                            {{ item.isExpanded ? '▼' : '▶' }}
                         </span>
                         <span class="folder-icon">📁</span>
-                        <span class="folder-name">{{ folder === '.' ? 'Stammverzeichnis' : folder }}</span>
-                        <span class="folder-count">({{ folderFiles.length }})</span>
+                        <span class="folder-name">{{ item.node.name === '.' ? 'Stammverzeichnis' : item.node.name
+                            }}</span>
+                        <span class="folder-count">({{ item.node.files.length }})</span>
                         <label class="folder-checkbox" @click.stop>
-                            <input type="checkbox" :checked="folderFiles.every(f => f.isSelected)"
-                                :indeterminate="folderFiles.some(f => f.isSelected) && !folderFiles.every(f => f.isSelected)"
-                                @change="toggleFolderSelection(folder, folderFiles)" />
+                            <input type="checkbox" :checked="item.node.files.every(f => f.isSelected)"
+                                :indeterminate="item.node.files.some(f => f.isSelected) && !item.node.files.every(f => f.isSelected)"
+                                @change="toggleFolderSelection(item.node.path, item.node.files)" />
                         </label>
                     </div>
 
                     <!-- Files in Folder -->
                     <Transition name="folder-slide">
-                        <div v-if="expandedFolders.has(folder)" class="folder-files">
-                            <div v-for="file in folderFiles" :key="file.fullPath" :class="[
+                        <div v-if="item.isExpanded" class="folder-files">
+                            <div v-for="file in item.node.files" :key="file.fullPath" :class="[
                                 'file-row',
                                 {
                                     selected: selectedFile?.fullPath === file.fullPath,
                                     unselected: !file.isSelected
                                 }
-                            ]" @click="emit('select', file)">
+                            ]" :style="{ paddingLeft: `${(item.node.level + 1) * 1.25}rem` }"
+                                @click="emit('select', file)">
                                 <label class="file-checkbox" @click.stop>
                                     <input type="checkbox" :checked="file.isSelected"
                                         @click="toggleSelection($event, file)" />

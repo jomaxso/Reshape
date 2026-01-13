@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import FolderPicker from './components/FolderPicker.vue';
 import FileList from './components/FileList.vue';
 import MetadataPanel from './components/MetadataPanel.vue';
@@ -44,6 +44,16 @@ function handleModeChange(mode: 'general' | 'vacation', isActive: boolean) {
     activeMode.value = null;
   }
 }
+
+// Get current preview items based on active mode
+const currentPreviewItems = computed(() => {
+  if (activeMode.value === 'general') {
+    return generalPreviewItems.value;
+  } else if (activeMode.value === 'vacation') {
+    return vacationPreviewItems.value;
+  }
+  return [];
+});
 
 // Load patterns on mount
 onMounted(async () => {
@@ -298,8 +308,8 @@ function handleToggleVacationItem(item: RenamePreviewItem) {
             <span class="panel-icon">📂</span>
             <span>Dateien ({{ files.length }})</span>
           </div>
-          <FileList :files="files" :selected-file="selectedFile" @select="handleSelectFile"
-            @toggle-selection="handleToggleFileSelection" />
+          <FileList :files="files" :selected-file="selectedFile" :preview-items="currentPreviewItems"
+            @select="handleSelectFile" @toggle-selection="handleToggleFileSelection" />
 
           <!-- File Details below file list -->
           <MetadataPanel v-if="selectedFile" :file="selectedFile" class="metadata-section" />
