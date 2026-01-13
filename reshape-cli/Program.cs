@@ -53,6 +53,7 @@ var rootCommand = new RootCommand("Reshape CLI - Batch rename files using metada
             FileCommand.Command,
             PatternCommand.Command,
             UpdateCommand.Command,
+            VersionCommand.Command,
         }
 };
 

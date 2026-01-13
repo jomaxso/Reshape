@@ -31,17 +31,61 @@
 
 ## 📦 Installation
 
-### Prerequisites
+### Quick Install (Recommended)
+
+#### Windows (PowerShell)
+```powershell
+iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.ps1) }"
+```
+
+#### Linux / macOS (Bash)
+```bash
+curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash
+```
+
+### Install Specific Version
+
+#### Windows
+```powershell
+iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.ps1) } -Version v0.1.0"
+```
+
+#### Linux / macOS
+```bash
+curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash -s -- --version v0.1.0
+```
+
+### Update to Latest Version
+
+If you already have Reshape installed, you can update it using:
+
+```bash
+reshape update
+```
+
+### Manual Installation from Releases
+
+Download the latest release for your platform from the [Releases page](https://github.com/jomaxso/Reshape/releases):
+
+- **Windows**: `reshape-win-x64.zip`
+- **Linux**: `reshape-linux-x64.tar.gz`
+- **macOS (ARM)**: `reshape-osx-arm64.tar.gz`
+
+Extract the archive and add the executable to your PATH.
+
+### Build from Source
+
+#### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Node.js 20+](https://nodejs.org/) (for UI development)
 
-### Build from Source
+#### Steps
 
 ```powershell
 # Clone the repository
-git clone https://github.com/jomaxso/TypeScript.git
-cd TypeScript
+git clone https://github.com/jomaxso/Reshape.git
+cd Reshape
 
 # Build the CLI
 dotnet build reshape-cli/
@@ -52,11 +96,12 @@ npm install
 npm run build
 ```
 
-### Publish as Native Executable
+#### Publish as Native Executable
 
 ```powershell
 cd reshape-cli
-dotnet publish -c Release
+dotnet publish -c Release -r <RID> --self-contained
+# Replace <RID> with: win-x64, linux-x64, or osx-arm64
 ```
 
 ## 🚀 Quick Start
@@ -98,6 +143,15 @@ dotnet run --project reshape-cli/ -- serve
 | `preview` | Preview rename operations | `reshape preview ./photos --pattern "{date_taken}_{filename}"` |
 | `rename` | Execute rename operations | `reshape rename ./photos --pattern "{year}/{month}/{filename}"` |
 | `patterns` | Show available pattern templates | `reshape patterns` |
+| `update` | Update to the latest version | `reshape update` |
+
+### Update Command Options
+
+| Option | Description |
+|--------|-------------|
+| `--check` | Check for updates without installing |
+| `--prerelease` | Include prerelease versions |
+| `--stable` | Only update to stable releases (default) |
 
 ### Common Options
 
