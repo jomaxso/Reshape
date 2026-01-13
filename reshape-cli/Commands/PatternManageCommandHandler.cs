@@ -7,8 +7,154 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal static class PatternManageCommandHandler
 {
-    public static int Add(string pattern, string description)
+    public static int Interactive()
     {
+        try
+        {
+            AnsiConsole.WriteLine();
+
+            var action = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("What would you like to do?")
+                    .AddChoices("List patterns", "Add pattern", "Remove pattern(s)")
+                    .HighlightStyle(new Style(Color.Cyan1))
+            );
+
+            return action switch
+            {
+                "List patterns" => List(),
+                "Add pattern" => InteractiveAdd(),
+                "Remove pattern(s)" => InteractiveRemove(),
+                _ => 0
+            };
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+            return 1;
+        }
+    }
+
+    private static int InteractiveAdd(string? defaultPattern = null, string? defaultDescription = null)
+    {
+        DisplayPlaceholderInfo();
+
+        AnsiConsole.MarkupLine("Add a new custom pattern:");
+        AnsiConsole.WriteLine();
+
+        var patternPrompt = new TextPrompt<string>("[cyan]Pattern:[/]")
+            .PromptStyle("green")
+            .ValidationErrorMessage("[red]Pattern cannot be empty[/]")
+            .Validate(p => !string.IsNullOrWhiteSpace(p));
+
+        if (!string.IsNullOrEmpty(defaultPattern))
+        {
+            patternPrompt.DefaultValue(defaultPattern);
+        }
+
+        var pattern = AnsiConsole.Prompt(patternPrompt);
+
+        var descriptionPrompt = new TextPrompt<string>("[cyan]Description:[/]")
+            .PromptStyle("green")
+            .ValidationErrorMessage("[red]Description cannot be empty[/]")
+            .Validate(d => !string.IsNullOrWhiteSpace(d));
+
+        if (!string.IsNullOrEmpty(defaultDescription))
+        {
+            descriptionPrompt.DefaultValue(defaultDescription);
+        }
+
+        var description = AnsiConsole.Prompt(descriptionPrompt);
+
+        AnsiConsole.WriteLine();
+        return Add(pattern, description, noInteractive: false);
+    }
+
+    private static int InteractiveRemove()
+    {
+        var customPatterns = ConfigurationService.LoadCustomPatterns();
+
+        if (!customPatterns.Any())
+        {
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[yellow]No custom patterns to remove.[/]");
+            return 0;
+        }
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[yellow]Select pattern(s) to remove[/]");
+        AnsiConsole.WriteLine();
+
+        var choices = customPatterns
+            .Select(p => $"{p.Pattern} - {p.Description}")
+            .ToList();
+
+        var selectedDescriptions = AnsiConsole.Prompt(
+            new MultiSelectionPrompt<string>()
+                .Title("[cyan]Patterns:[/]")
+                .PageSize(10)
+                .MoreChoicesText("[grey](Move up and down to reveal more patterns)[/]")
+                .InstructionsText("[grey](Press [blue]<space>[/] to toggle, [green]<enter>[/] to confirm)[/]")
+                .AddChoices(choices)
+        );
+
+        if (!selectedDescriptions.Any())
+        {
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[yellow]No patterns selected.[/]");
+            return 0;
+        }
+
+        AnsiConsole.WriteLine();
+        var successCount = 0;
+        var errorCount = 0;
+
+        foreach (var selected in selectedDescriptions)
+        {
+            // Extract pattern from "pattern - description" format
+            var pattern = selected.Split(" - ")[0];
+
+            try
+            {
+                var removed = ConfigurationService.RemoveCustomPattern(pattern);
+                if (removed)
+                {
+                    AnsiConsole.MarkupLine($"[green]✓ Removed:[/] [cyan]{Markup.Escape(pattern)}[/]");
+                    successCount++;
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[yellow]⚠ Not found:[/] [cyan]{Markup.Escape(pattern)}[/]");
+                    errorCount++;
+                }
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]✗ Error removing {Markup.Escape(pattern)}: {Markup.Escape(ex.Message)}[/]");
+                errorCount++;
+            }
+        }
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine($"[green]{successCount} pattern(s) removed[/], [red]{errorCount} error(s)[/]");
+
+        return errorCount > 0 ? 1 : 0;
+    }
+    public static int Add(string? pattern, string? description, bool noInteractive = false)
+    {
+        // If no-interactive mode and arguments are missing, show error
+        if (noInteractive && (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(description)))
+        {
+            AnsiConsole.MarkupLine("[red]Error: Both pattern and description are required in non-interactive mode[/]");
+            return 1;
+        }
+
+        // If arguments are missing, use interactive mode with defaults
+        if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(description))
+        {
+            return InteractiveAdd(pattern, description);
+        }
+
         try
         {
             ConfigurationService.AddCustomPattern(pattern, description);
@@ -29,12 +175,25 @@ internal static class PatternManageCommandHandler
         }
     }
 
-    public static int Remove(string pattern)
+    public static int Remove(string? pattern, bool noInteractive = false)
     {
+        // If no-interactive mode and pattern is missing, show error
+        if (noInteractive && string.IsNullOrEmpty(pattern))
+        {
+            AnsiConsole.MarkupLine("[red]Error: Pattern is required in non-interactive mode[/]");
+            return 1;
+        }
+
+        // If pattern is missing, use interactive mode
+        if (string.IsNullOrEmpty(pattern))
+        {
+            return InteractiveRemove();
+        }
+
         try
         {
             var removed = ConfigurationService.RemoveCustomPattern(pattern);
-            
+
             if (removed)
             {
                 AnsiConsole.MarkupLine($"[green]✓ Pattern removed successfully![/]");
@@ -82,7 +241,7 @@ internal static class PatternManageCommandHandler
             if (customPatterns.Any())
             {
                 AnsiConsole.WriteLine();
-                
+
                 var customTable = new Table()
                     .Border(TableBorder.Rounded)
                     .AddColumn("[bold]Pattern[/]")
@@ -106,7 +265,7 @@ internal static class PatternManageCommandHandler
             }
 
             DisplayPlaceholderInfo();
-            
+
             return 0;
         }
         catch (Exception ex)

@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using Reshape.Cli.Commands;
+using Spectre.Console;
 
 // ============================================================================
 // CLI Application Entry Point
@@ -89,37 +90,68 @@ renameCommand.SetAction(input =>
 
 // Pattern command group - Manage custom patterns
 var patternCommand = new Command("pattern", "Manage custom rename patterns");
+var patternNoInteractiveOpt = new Option<bool>("--no-interactive")
+{
+    Description = "Skip interactive mode and require explicit subcommand"
+};
+patternCommand.Add(patternNoInteractiveOpt);
+patternCommand.SetAction(input =>
+{
+    var noInteractive = input.GetValue(patternNoInteractiveOpt);
+    if (noInteractive)
+    {
+        // Show help when no subcommand is provided
+        AnsiConsole.MarkupLine("[yellow]Usage:[/] pattern [[list|add|remove]]");
+        return 0;
+    }
+    return PatternManageCommandHandler.Interactive();
+});
 
 // Pattern add subcommand
 var patternAddCommand = new Command("add", "Add a new custom pattern");
-var patternAddPatternArg = new Argument<string>("pattern")
+var patternAddPatternArg = new Argument<string?>("pattern")
 {
-    Description = "The pattern string (e.g., {year}-{month}-{day}_{filename})"
+    Description = "The pattern string (e.g., {year}-{month}-{day}_{filename})",
+    Arity = ArgumentArity.ZeroOrOne
 };
-var patternAddDescArg = new Argument<string>("description")
+var patternAddDescArg = new Argument<string?>("description")
 {
-    Description = "Description of the pattern"
+    Description = "Description of the pattern",
+    Arity = ArgumentArity.ZeroOrOne
+};
+var patternAddNoInteractiveOpt = new Option<bool>("--no-interactive")
+{
+    Description = "Skip interactive mode and require all arguments"
 };
 patternAddCommand.Add(patternAddPatternArg);
 patternAddCommand.Add(patternAddDescArg);
+patternAddCommand.Add(patternAddNoInteractiveOpt);
 patternAddCommand.SetAction(input =>
 {
-    var pattern = input.GetValue(patternAddPatternArg)!;
-    var description = input.GetValue(patternAddDescArg)!;
-    return PatternManageCommandHandler.Add(pattern, description);
+    var pattern = input.GetValue(patternAddPatternArg);
+    var description = input.GetValue(patternAddDescArg);
+    var noInteractive = input.GetValue(patternAddNoInteractiveOpt);
+    return PatternManageCommandHandler.Add(pattern, description, noInteractive);
 });
 
 // Pattern remove subcommand
 var patternRemoveCommand = new Command("remove", "Remove a custom pattern");
-var patternRemovePatternArg = new Argument<string>("pattern")
+var patternRemovePatternArg = new Argument<string?>("pattern")
 {
-    Description = "The pattern string to remove"
+    Description = "The pattern string to remove",
+    Arity = ArgumentArity.ZeroOrOne
+};
+var patternRemoveNoInteractiveOpt = new Option<bool>("--no-interactive")
+{
+    Description = "Skip interactive mode and require pattern argument"
 };
 patternRemoveCommand.Add(patternRemovePatternArg);
+patternRemoveCommand.Add(patternRemoveNoInteractiveOpt);
 patternRemoveCommand.SetAction(input =>
 {
-    var pattern = input.GetValue(patternRemovePatternArg)!;
-    return PatternManageCommandHandler.Remove(pattern);
+    var pattern = input.GetValue(patternRemovePatternArg);
+    var noInteractive = input.GetValue(patternRemoveNoInteractiveOpt);
+    return PatternManageCommandHandler.Remove(pattern, noInteractive);
 });
 
 // Pattern list subcommand
