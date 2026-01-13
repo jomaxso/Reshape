@@ -1,3 +1,5 @@
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using Spectre.Console;
 
 namespace Reshape.Cli.Commands;
@@ -5,10 +7,31 @@ namespace Reshape.Cli.Commands;
 /// <summary>
 /// Handles pattern management commands (add, remove, list).
 /// </summary>
-internal static class PatternManageCommandHandler
+internal sealed class PatternCommand : AsynchronousCommandLineAction
 {
-    public static int Interactive()
+    public static Command Command => new("pattern", "Manage custom rename patterns")
     {
+        Subcommands =
+        {
+            BuildAddCommand(),
+            BuildRemoveCommand(),
+            BuildListCommand()
+        },
+        Action = new PatternCommand()
+    };
+
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
+    {
+        await Task.Yield();
+
+        var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
+
+        if (noInteractive)
+        {
+            AnsiConsole.MarkupLine("[yellow]Usage:[/] pattern [[list|add|remove]]");
+            return 0;
+        }
+
         try
         {
             AnsiConsole.WriteLine();
@@ -33,6 +56,64 @@ internal static class PatternManageCommandHandler
             AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
             return 1;
         }
+    }
+
+    private static Command BuildAddCommand()
+    {
+        var command = new Command("add", "Add a new custom pattern");
+
+        var patternArg = new Argument<string?>("pattern")
+        {
+            Description = "The pattern string (e.g., {year}-{month}-{day}_{filename})",
+            Arity = ArgumentArity.ZeroOrOne
+        };
+        var descArg = new Argument<string?>("description")
+        {
+            Description = "Description of the pattern",
+            Arity = ArgumentArity.ZeroOrOne
+        };
+
+        command.Add(patternArg);
+        command.Add(descArg);
+
+        command.SetAction(input =>
+        {
+            var pattern = input.GetValue(patternArg);
+            var description = input.GetValue(descArg);
+            var noInteractive = input.GetValue(GlobalOptions.NoInteractive);
+            return Add(pattern, description, noInteractive);
+        });
+
+        return command;
+    }
+
+    private static Command BuildRemoveCommand()
+    {
+        var command = new Command("remove", "Remove a custom pattern");
+
+        var patternArg = new Argument<string?>("pattern")
+        {
+            Description = "The pattern string to remove",
+            Arity = ArgumentArity.ZeroOrOne
+        };
+
+        command.Add(patternArg);
+
+        command.SetAction(input =>
+        {
+            var pattern = input.GetValue(patternArg);
+            var noInteractive = input.GetValue(GlobalOptions.NoInteractive);
+            return Remove(pattern, noInteractive);
+        });
+
+        return command;
+    }
+
+    private static Command BuildListCommand()
+    {
+        var command = new Command("list", "List all patterns (default and custom)");
+        command.SetAction(_ => List());
+        return command;
     }
 
     private static int InteractiveAdd(string? defaultPattern = null, string? defaultDescription = null)
@@ -283,4 +364,6 @@ internal static class PatternManageCommandHandler
         AnsiConsole.MarkupLine("[dim]  {camera_make}, {camera_model}, {width}, {height}[/]");
         AnsiConsole.MarkupLine("[dim]  {counter:N} - auto-incrementing counter with N digits[/]");
     }
+
+
 }

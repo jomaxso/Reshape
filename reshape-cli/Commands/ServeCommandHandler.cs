@@ -1,3 +1,5 @@
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using Spectre.Console;
 
 namespace Reshape.Cli.Commands;
@@ -5,9 +7,23 @@ namespace Reshape.Cli.Commands;
 /// <summary>
 /// Handles the 'serve' command to start the Reshape web user interface.
 /// </summary>
-internal static class ServeCommandHandler
+internal sealed class ServeCommandHandler : ICommandHandler, ICommandBuilder
 {
-    public static async Task<int> ExecuteAsync()
+    public static Command BuildCommand()
+    {
+        var command = new Command("serve", "Starts the Reshape web user interface");
+        command.SetAction(async p =>
+        {
+            var interactive = p.RootCommandResult.GetValue(GlobalOptions.NoInteractive);
+            var handler = new ServeCommandHandler();
+            return await handler.RunAsync();
+        });
+        return command;
+    }
+
+    public Task<int> RunInteractiveAsync() => RunAsync();
+
+    public async Task<int> RunAsync()
     {
         var builder = WebApplication.CreateBuilder();
 
