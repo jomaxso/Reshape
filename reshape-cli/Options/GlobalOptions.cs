@@ -47,11 +47,20 @@ internal static class GlobalOptions
                 return [];
             }
 
-            if (!AnsiConsole.Confirm("Filter by file extensions?", defaultValue: false))
-                return [];
+            string[] CommonExtensions =
+            [
+                ".jpg", ".jpeg", ".png", ".heic", ".gif", ".bmp", ".tiff", ".raw",
+                ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx"
+            ];
 
-            var extInput = AnsiConsole.Ask<string>("[cyan]Extensions (space-separated, e.g., .jpg .png):[/]");
-            return extInput.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var prompt = new MultiSelectionPrompt<string>()
+                       .Title("[yellow]Select file extensions to process:[/]")
+                       .PageSize(15)
+                       .InstructionsText("[grey](Press [blue]<space>[/] to toggle, [green]<enter>[/] to accept)[/]")
+                       .AddChoices(CommonExtensions);
+
+            var selected = AnsiConsole.Prompt(prompt);
+            return [.. selected];
         }
     };
 

@@ -7,28 +7,12 @@ namespace Reshape.Cli.Commands;
 /// <summary>
 /// Handles the 'rename' command to execute rename operations on files.
 /// </summary>
-internal sealed class RenameCommandHandler : AsynchronousCommandLineAction
+internal sealed class RenameCommand : AsynchronousCommandLineAction
 {
-    private static readonly string[] CommonExtensions =
-    [
-        ".jpg", ".jpeg", ".png", ".heic", ".gif", ".bmp", ".tiff", ".raw",
-        ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx"
-    ];
-
-    private static readonly Option<bool> DryRunOption = new("--dry-run")
-    {
-        Description = "Preview changes without executing"
-    };
-    private static readonly Option<string[]> ExtensionOption = new("--ext")
-    {
-        Description = "Filter by extensions (e.g., .jpg .png)",
-        AllowMultipleArgumentsPerToken = true
-    };
-
     public static Command Command => new("rename", "Execute rename operations")
     {
-        Options = { GlobalOptions.Path, GlobalOptions.Pattern, DryRunOption, GlobalOptions.Extension },
-        Action = new RenameCommandHandler()
+        Options = { GlobalOptions.Path, GlobalOptions.Pattern, GlobalOptions.Extension },
+        Action = new RenameCommand()
     };
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
@@ -39,16 +23,6 @@ internal sealed class RenameCommandHandler : AsynchronousCommandLineAction
         var path = parseResult.GetRequiredValue(GlobalOptions.Path);
         var pattern = parseResult.GetValue(GlobalOptions.Pattern);
         var extensions = parseResult.GetValue(GlobalOptions.Extension);
-        var dryRun = parseResult.GetValue(DryRunOption);
-
-        // Interactive mode if pattern is missing and not in no-interactive mode
-        if (!noInteractive && string.IsNullOrEmpty(pattern))
-        {
-            path = PromptForPath();
-            extensions = PromptForExtensions();
-            pattern = PromptForPattern();
-            dryRun = AnsiConsole.Confirm("Dry run (preview only)?", defaultValue: true);
-        }
 
         try
         {
@@ -69,14 +43,14 @@ internal sealed class RenameCommandHandler : AsynchronousCommandLineAction
             }
 
             // Confirm operation
-            if (!dryRun && !noInteractive && !ConfirmRename(preview))
+            if (!noInteractive && !ConfirmRename(preview))
             {
                 AnsiConsole.MarkupLine("[yellow]Operation cancelled[/]");
                 return 0;
             }
 
-            var results = FileService.ExecuteRename(preview, fullPath, dryRun);
-            DisplayResults(results, dryRun);
+            var results = FileService.ExecuteRename(preview, fullPath);
+            DisplayResults(results);
 
             return 0;
         }
@@ -112,18 +86,6 @@ internal sealed class RenameCommandHandler : AsynchronousCommandLineAction
         }
 
         return selectedPattern.Split(" - ")[0];
-    }
-
-    private static string[]? PromptForExtensions()
-    {
-        var prompt = new MultiSelectionPrompt<string>()
-            .Title("[yellow]Select file extensions to process:[/]")
-            .PageSize(15)
-            .InstructionsText("[grey](Press [blue]<space>[/] to toggle, [green]<enter>[/] to accept)[/]")
-            .AddChoices(CommonExtensions);
-
-        var selected = AnsiConsole.Prompt(prompt);
-        return selected.Count > 0 ? selected.ToArray() : null;
     }
 
     private static void DisplayPreviewTable(RenamePreviewItem[] preview, string pattern)
@@ -179,7 +141,7 @@ internal sealed class RenameCommandHandler : AsynchronousCommandLineAction
         return choice == "Yes, continue";
     }
 
-    private static void DisplayResults(RenameResult[] results, bool dryRun)
+    private static void DisplayResults(RenameResult[] results)
     {
         foreach (var result in results)
         {
@@ -192,9 +154,6 @@ internal sealed class RenameCommandHandler : AsynchronousCommandLineAction
                 AnsiConsole.MarkupLine($"  [red]{Markup.Escape(result.Error)}[/]");
         }
 
-        if (dryRun)
-            AnsiConsole.MarkupLine("\n[yellow]Dry run - no files were changed[/]");
-        else
-            AnsiConsole.MarkupLine($"\n[green]Successfully renamed {results.Count(r => r.Success)} file(s)[/]");
+        AnsiConsole.MarkupLine($"\n[green]Successfully renamed {results.Count(r => r.Success)} file(s)[/]");
     }
 }

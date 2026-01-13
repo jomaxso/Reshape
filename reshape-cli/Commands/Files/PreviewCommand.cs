@@ -19,7 +19,6 @@ internal sealed class PreviewCommand : AsynchronousCommandLineAction
     {
         await Task.Yield();
 
-        var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
         var path = parseResult.GetRequiredValue(GlobalOptions.Path);
         var pattern = parseResult.GetValue(GlobalOptions.Pattern);
         var extensions = parseResult.GetValue(GlobalOptions.Extension);

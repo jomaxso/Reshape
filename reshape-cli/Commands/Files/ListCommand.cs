@@ -38,15 +38,6 @@ internal sealed class ListCommand : AsynchronousCommandLineAction
         }
     }
 
-    private static string[]? PromptForExtensions()
-    {
-        if (!AnsiConsole.Confirm("Filter by file extensions?", defaultValue: false))
-            return null;
-
-        var extInput = AnsiConsole.Ask<string>("[cyan]Extensions (space-separated, e.g., .jpg .png):[/]");
-        return extInput.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-    }
-
     private static void DisplayFilesTable(FileInfo[] files, string fullPath)
     {
         var table = new Table()

@@ -1,0 +1,53 @@
+using System.CommandLine;
+using Spectre.Console;
+using Reshape.Cli.Utilities;
+using System.CommandLine.Invocation;
+using System.ComponentModel.Design;
+
+namespace Reshape.Cli.Commands;
+
+/// <summary>
+/// Handles the 'file' command to list, rename, and manage files.
+/// </summary>
+internal sealed class FileCommand : AsynchronousCommandLineAction
+{
+    public static Command Command => new("file", "List, rename, and manage files")
+    {
+        Subcommands = { ListCommand.Command, RenameCommand.Command, PreviewCommand.Command },
+        Action = new FileCommand()
+    };
+
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
+    {
+        var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
+
+        if (noInteractive)
+        {
+            AnsiConsole.MarkupLine("[red]Error: Please specify a subcommand in non-interactive mode[/]");
+            return 1;
+        }
+
+        var commandString = AnsiConsole.Prompt(
+        new SelectionPrompt<string>()
+            .Title("[cyan]What would you like to do?[/]")
+            .PageSize(10)
+            .AddChoices(
+                "📄 List Files",
+                "✏️ Rename Files",
+                "🔍 Preview Rename"
+            ));
+
+        var command = commandString switch
+        {
+            "📄 List Files" => ListCommand.Command,
+            "✏️ Rename Files" => RenameCommand.Command,
+            "🔍 Preview Rename" => PreviewCommand.Command,
+            _ => null
+        };
+
+        return command is null
+            ? 0
+            : await command.Parse([.. parseResult.Tokens.Select(t => t.Value)])
+                .InvokeAsync(cancellationToken: cancellationToken);
+    }
+}

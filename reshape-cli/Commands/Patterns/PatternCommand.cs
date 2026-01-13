@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using Spectre.Console;
 
-namespace Reshape.Cli.Commands;
+namespace Reshape.Cli.Commands.Patterns;
 
 /// <summary>
 /// Handles pattern management commands (add, remove, list).

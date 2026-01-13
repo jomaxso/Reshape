@@ -5,13 +5,13 @@ using Spectre.Console;
 namespace Reshape.Cli.Commands;
 
 /// <summary>
-/// Handles the 'serve' command to start the Reshape web user interface.
+/// Handles the 'run' command to start the Reshape web UI.
 /// </summary>
-internal sealed class ServeCommandHandler : AsynchronousCommandLineAction
+internal sealed class RunCommand : AsynchronousCommandLineAction
 {
-    public static Command Command => new("serve", "Starts the Reshape web user interface")
+    public static Command Command => new("run", "Starts the Reshape web UI")
     {
-        Action = new ServeCommandHandler()
+        Action = new RunCommand()
     };
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
