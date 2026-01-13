@@ -11,12 +11,6 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class FileCommand : AsynchronousCommandLineAction
 {
-    public static Command Command => new("file", "List, rename, and manage files")
-    {
-        Subcommands = { ListCommand.Command, RenameCommand.Command, PreviewCommand.Command },
-        Action = new FileCommand()
-    };
-
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
@@ -37,17 +31,16 @@ internal sealed class FileCommand : AsynchronousCommandLineAction
                 "🔍 Preview Rename"
             ));
 
-        var command = commandString switch
+        AsynchronousCommandLineAction? command = commandString switch
         {
-            "📄 List Files" => ListCommand.Command,
-            "✏️ Rename Files" => RenameCommand.Command,
-            "🔍 Preview Rename" => PreviewCommand.Command,
+            "📄 List Files" => new ListCommand(),
+            "✏️ Rename Files" => new RenameCommand(),
+            "🔍 Preview Rename" => new PreviewCommand(),
             _ => null
         };
 
         return command is null
             ? 0
-            : await command.Parse([.. parseResult.Tokens.Select(t => t.Value)])
-                .InvokeAsync(cancellationToken: cancellationToken);
+            : await command.InvokeAsync(parseResult, cancellationToken);
     }
 }
