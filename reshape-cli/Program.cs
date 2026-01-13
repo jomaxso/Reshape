@@ -1,102 +1,57 @@
-﻿using System.CommandLine;
+﻿
+using System.CommandLine;
+using Reshape.Cli;
 using Reshape.Cli.Commands;
+using Reshape.Cli.Commands.Patterns;
+using Spectre.Console;
 
 // ============================================================================
 // CLI Application Entry Point
 // ============================================================================
 
-var rootCommand = new RootCommand("Reshape CLI - Batch rename files using metadata patterns");
+// Interactive mode when no arguments provided
+if (args.Length == 0 || !args.Any(arg => arg == "--no-interactive"))
+{
+    AnsiConsole.Write(
+    new FigletText("Reshape CLI")
+        .LeftJustified()
+        .Color(Color.Cyan1));
 
-// Configure common options
-var extensionOption = new Option<string[]>("--ext")
-{
-    Description = "Filter by extensions (e.g., .jpg .png)",
-    AllowMultipleArgumentsPerToken = true
-};
+    AnsiConsole.MarkupLine("[dim]Batch rename files using metadata patterns[/]\n");
 
-// Serve command - Web UI
-var webUiCommand = new Command("serve", "Starts the Reshape web user interface");
-webUiCommand.SetAction(async _ => await ServeCommandHandler.ExecuteAsync());
+    var commandString = AnsiConsole.Prompt(
+        new SelectionPrompt<string>()
+            .Title("[cyan]What would you like to do?[/]")
+            .PageSize(10)
+            .AddChoices(
+                "🌐 Run - Start Web UI",
+                 "📁 File - Manage Files",
+                "🎨 Pattern - Manage Patterns"
+            ));
 
-// List command - Display files
-var listCommand = new Command("list", "List files in a folder");
-var listPathOpt = new Option<string>("--path")
-{
-    Description = "Folder path to scan (defaults to current directory)",
-    DefaultValueFactory = _ => "."
-};
-listCommand.Add(listPathOpt);
-listCommand.Add(extensionOption);
-listCommand.SetAction(input =>
-{
-    var path = input.GetValue(listPathOpt)!;
-    var ext = input.GetValue(extensionOption);
-    return ListCommandHandler.Execute(path, ext);
-});
+    var command = commandString switch
+    {
+        "🌐 Run - Start Web UI" => RunCommand.Command,
+        "📁 File - Manage Files" => FileCommand.Command,
+        "🎨 Pattern - Manage Patterns" => PatternCommand.Command,
+        _ => null
+    };
 
-// Preview command - Show rename preview
-var previewCommand = new Command("preview", "Preview rename operations");
-var previewPathOpt = new Option<string>("--path")
-{
-    Description = "Folder path (defaults to current directory)",
-    DefaultValueFactory = _ => "."
-};
-var previewPatternOpt = new Option<string?>("--pattern")
-{
-    Description = "Rename pattern (e.g., {year}-{month}-{day}_{filename})"
-};
-previewCommand.Add(previewPathOpt);
-previewCommand.Add(previewPatternOpt);
-previewCommand.Add(extensionOption);
-previewCommand.SetAction(input =>
-{
-    var path = input.GetValue(previewPathOpt)!;
-    var pattern = input.GetValue(previewPatternOpt);
-    var ext = input.GetValue(extensionOption);
-    return PreviewCommandHandler.Execute(path, pattern, ext);
-});
+    return command is null
+        ? 0
+        : await command.Parse(args).InvokeAsync();
+}
 
-// Rename command - Execute rename operations
-var renameCommand = new Command("rename", "Execute rename operations");
-var renamePathOpt = new Option<string>("--path")
+var rootCommand = new RootCommand("Reshape CLI - Batch rename files using metadata patterns")
 {
-    Description = "Folder path (defaults to current directory)",
-    DefaultValueFactory = _ => "."
+    Options = { GlobalOptions.NoInteractive },
+    Subcommands =
+        {
+            RunCommand.Command,
+            FileCommand.Command,
+            PatternCommand.Command,
+        }
 };
-var renamePatternOpt = new Option<string?>("--pattern") { Description = "Rename pattern" };
-var dryRunOpt = new Option<bool>("--dry-run")
-{
-    Description = "Preview changes without executing"
-};
-var noInteractiveOpt = new Option<bool>("--no-interactive")
-{
-    Description = "Skip confirmation prompts and execute automatically"
-};
-renameCommand.Add(renamePathOpt);
-renameCommand.Add(renamePatternOpt);
-renameCommand.Add(dryRunOpt);
-renameCommand.Add(noInteractiveOpt);
-renameCommand.Add(extensionOption);
-renameCommand.SetAction(input =>
-{
-    var path = input.GetValue(renamePathOpt)!;
-    var pattern = input.GetValue(renamePatternOpt);
-    var ext = input.GetValue(extensionOption);
-    var dryRun = input.GetValue(dryRunOpt);
-    var noInteractive = input.GetValue(noInteractiveOpt);
-    return RenameCommandHandler.Execute(path, pattern, ext, dryRun, noInteractive);
-});
-
-// Patterns command - Show available patterns
-var patternsCommand = new Command("patterns", "Show available pattern templates");
-patternsCommand.SetAction(_ => PatternsCommandHandler.Execute());
-
-// Register all commands
-rootCommand.Subcommands.Add(webUiCommand);
-rootCommand.Subcommands.Add(listCommand);
-rootCommand.Subcommands.Add(previewCommand);
-rootCommand.Subcommands.Add(renameCommand);
-rootCommand.Subcommands.Add(patternsCommand);
 
 return await rootCommand.Parse(args).InvokeAsync();
 

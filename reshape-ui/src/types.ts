@@ -35,6 +35,23 @@ export interface RenamePattern {
     description: string;
 }
 
+// CustomPattern uses the same structure as RenamePattern
+export type CustomPattern = RenamePattern;
+
+export interface AddPatternRequest {
+    pattern: string;
+    description: string;
+}
+
+export interface RemovePatternRequest {
+    pattern: string;
+}
+
+export interface PatternResponse {
+    success: boolean;
+    message?: string;
+}
+
 export interface VacationModeOptions {
     enabled: boolean;
     startDate?: string;

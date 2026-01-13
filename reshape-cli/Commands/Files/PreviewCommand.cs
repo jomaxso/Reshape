@@ -1,3 +1,5 @@
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using Spectre.Console;
 
 namespace Reshape.Cli.Commands;
@@ -5,10 +7,22 @@ namespace Reshape.Cli.Commands;
 /// <summary>
 /// Handles the 'preview' command to show rename operations before executing them.
 /// </summary>
-internal static class PreviewCommandHandler
+internal sealed class PreviewCommand : AsynchronousCommandLineAction
 {
-    public static int Execute(string path, string? pattern, string[]? ext)
+    public static Command Command => new("preview", "Preview rename operations")
     {
+        Options = { GlobalOptions.Path, GlobalOptions.Pattern, GlobalOptions.Extension },
+        Action = new PreviewCommand()
+    };
+
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
+    {
+        await Task.Yield();
+
+        var path = parseResult.GetRequiredValue(GlobalOptions.Path);
+        var pattern = parseResult.GetValue(GlobalOptions.Pattern);
+        var extensions = parseResult.GetValue(GlobalOptions.Extension);
+
         try
         {
             if (string.IsNullOrEmpty(pattern))
@@ -17,10 +31,8 @@ internal static class PreviewCommandHandler
                 return 1;
             }
 
-            ext ??= [];
-
             var fullPath = Path.GetFullPath(path);
-            var preview = FileService.GeneratePreview(fullPath, pattern, ext != null && ext.Length > 0 ? ext : null);
+            var preview = FileService.GeneratePreview(fullPath, pattern, extensions);
 
             DisplayPreviewTable(preview, pattern);
 

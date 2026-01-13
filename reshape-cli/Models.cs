@@ -24,6 +24,8 @@ internal record ScanResponse(string FolderPath, FileInfo[] Files, int TotalCount
 
 internal record RenamePattern(string Pattern, string Description);
 
+internal record CustomPattern(string Pattern, string Description);
+
 internal record VacationModeOptions(
     bool Enabled,
     DateTime? StartDate,
@@ -53,3 +55,7 @@ internal record RenamePreviewResponse(RenamePreviewItem[] Items, int ConflictCou
 internal record RenameExecuteRequest(RenamePreviewItem[] Items, string? BaseFolderPath = null, bool DryRun = false);
 internal record RenameResult(string OriginalPath, string NewPath, bool Success, string? Error);
 internal record RenameExecuteResponse(RenameResult[] Results, int SuccessCount, int ErrorCount);
+
+internal record AddPatternRequest(string Pattern, string Description);
+internal record RemovePatternRequest(string Pattern);
+internal record PatternResponse(bool Success, string? Message = null);

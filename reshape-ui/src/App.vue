@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import FolderPicker from './components/FolderPicker.vue';
 import FileList from './components/FileList.vue';
 import MetadataPanel from './components/MetadataPanel.vue';
 import VacationModePanel from './components/VacationModePanel.vue';
 import GeneralModePanel from './components/GeneralModePanel.vue';
 import PlaceholderReference from './components/PlaceholderReference.vue';
+import PatternManager from './components/PatternManager.vue';
 import api from './api';
 import type { FileInfo, RenamePattern, RenamePreviewItem, VacationModeOptions } from './types';
+
+// Constants
+const DEFAULT_PATTERN_COUNT = 6; // Number of built-in patterns
 
 // State
 const folderPath = ref('');
@@ -41,6 +45,16 @@ function handleModeChange(mode: 'general' | 'vacation', isActive: boolean) {
   }
 }
 
+// Get current preview items based on active mode
+const currentPreviewItems = computed(() => {
+  if (activeMode.value === 'general') {
+    return generalPreviewItems.value;
+  } else if (activeMode.value === 'vacation') {
+    return vacationPreviewItems.value;
+  }
+  return [];
+});
+
 // Load patterns on mount
 onMounted(async () => {
   try {
@@ -49,6 +63,43 @@ onMounted(async () => {
     console.error('Failed to load patterns:', e);
   }
 });
+
+// Refresh patterns
+async function refreshPatterns() {
+  try {
+    patterns.value = await api.getPatterns();
+  } catch (e) {
+    console.error('Failed to refresh patterns:', e);
+  }
+}
+
+// Add custom pattern
+async function handleAddPattern(pattern: string, description: string) {
+  try {
+    const response = await api.addPattern(pattern, description);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to add pattern');
+    }
+    // Refresh patterns immediately after successful add
+    await refreshPatterns();
+  } catch (e) {
+    throw e;
+  }
+}
+
+// Remove custom pattern
+async function handleRemovePattern(pattern: string) {
+  try {
+    const response = await api.removePattern(pattern);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to remove pattern');
+    }
+    // Refresh patterns immediately after successful remove
+    await refreshPatterns();
+  } catch (e) {
+    throw e;
+  }
+}
 
 // Scan folder
 async function handleScan() {
@@ -257,8 +308,8 @@ function handleToggleVacationItem(item: RenamePreviewItem) {
             <span class="panel-icon">📂</span>
             <span>Dateien ({{ files.length }})</span>
           </div>
-          <FileList :files="files" :selected-file="selectedFile" @select="handleSelectFile"
-            @toggle-selection="handleToggleFileSelection" />
+          <FileList :files="files" :selected-file="selectedFile" :preview-items="currentPreviewItems"
+            @select="handleSelectFile" @toggle-selection="handleToggleFileSelection" />
 
           <!-- File Details below file list -->
           <MetadataPanel v-if="selectedFile" :file="selectedFile" class="metadata-section" />
@@ -286,6 +337,10 @@ function handleToggleVacationItem(item: RenamePreviewItem) {
 
           <!-- Placeholder Reference (for all modes) -->
           <PlaceholderReference />
+
+          <!-- Pattern Manager -->
+          <PatternManager :patterns="patterns" :default-pattern-count="DEFAULT_PATTERN_COUNT" @add="handleAddPattern"
+            @remove="handleRemovePattern" />
 
         </div>
       </div>

@@ -213,7 +213,8 @@ internal static class FileService
             return $"{{counter:{padding}}}"; // Keep placeholder for batch processing
         });
 
-        return SanitizeForFilename(result);
+        // Use SanitizeForPath to allow folder separators (/ or \)
+        return SanitizeForPath(result);
     }
 
     public static string SanitizeForFilename(string name)
@@ -221,6 +222,15 @@ internal static class FileService
         var invalid = System.IO.Path.GetInvalidFileNameChars();
         var sanitized = new string(name.Where(c => !invalid.Contains(c)).ToArray());
         return sanitized.Trim();
+    }
+
+    public static string SanitizeForPath(string path)
+    {
+        // Split by path separators, sanitize each segment, then recombine
+        var separators = new[] { '/', '\\' };
+        var segments = path.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+        var sanitizedSegments = segments.Select(SanitizeForFilename).Where(s => !string.IsNullOrWhiteSpace(s));
+        return string.Join(Path.DirectorySeparatorChar, sanitizedSegments);
     }
 
     public static RenamePreviewItem[] GeneratePreview(
@@ -456,12 +466,5 @@ internal static class FileService
     }
 
     public static RenamePattern[] GetPatternTemplates() =>
-    [
-        new("{year}-{month}-{day}_{filename}", "Date prefix: 2024-01-15_photo"),
-        new("{date_taken}_{time_taken}_{filename}", "EXIF date/time: 2024-01-15_14-30-00_photo"),
-        new("{year}/{month}/{filename}", "Year/Month folders (use with caution)"),
-        new("{camera_model}_{date_taken}_{counter:4}", "Camera + date + counter: iPhone_2024-01-15_0001"),
-        new("{filename}_{counter:3}", "Original name + counter: photo_001"),
-        new("IMG_{year}{month}{day}_{counter:4}", "Standard format: IMG_20240115_0001"),
-    ];
+        ConfigurationService.GetAllPatterns();
 }
