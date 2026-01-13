@@ -30,7 +30,7 @@
                     <label class="section-label">Eigenes Muster</label>
                     <div class="input-wrapper">
                         <input key="custom-pattern-input" v-model="customPattern" type="text"
-                            placeholder="{year}-{month}-{day}_{filename}" />
+                            placeholder="{year}/{month}/{day}_{filename}" />
                     </div>
                 </div>
 
@@ -155,6 +155,7 @@ const placeholders = [
     { key: '{gps_lon}', desc: 'GPS-Längengrad' },
     { key: '{created}', desc: 'Erstellungsdatum der Datei' },
     { key: '{modified}', desc: 'Änderungsdatum der Datei' },
+    { key: '/', desc: 'Unterordner erstellen (z.B. {year}/{month}/{filename})' },
 ];
 
 const activePattern = computed(() => customPattern.value || selectedPattern.value);

@@ -77,7 +77,7 @@ internal static class ConfigurationService
     public static void AddCustomPattern(string pattern, string description)
     {
         var patterns = LoadCustomPatterns();
-        
+
         // Check if pattern already exists
         if (patterns.Any(p => p.Pattern.Equals(pattern, StringComparison.OrdinalIgnoreCase)))
         {
@@ -95,7 +95,7 @@ internal static class ConfigurationService
     {
         var patterns = LoadCustomPatterns();
         var removed = patterns.RemoveAll(p => p.Pattern.Equals(pattern, StringComparison.OrdinalIgnoreCase));
-        
+
         if (removed > 0)
         {
             SaveCustomPatterns(patterns);
@@ -125,7 +125,7 @@ internal static class ConfigurationService
     [
         new("{year}-{month}-{day}_{filename}", "Date prefix: 2024-01-15_photo"),
         new("{date_taken}_{time_taken}_{filename}", "EXIF date/time: 2024-01-15_14-30-00_photo"),
-        new("{year}/{month}/{filename}", "Year/Month folders (use with caution)"),
+        new("{year}/{month}/{filename}", "Year/Month folders: 2024/01/photo"),
         new("{camera_model}_{date_taken}_{counter:4}", "Camera + date + counter: iPhone_2024-01-15_0001"),
         new("{filename}_{counter:3}", "Original name + counter: photo_001"),
         new("IMG_{year}{month}{day}_{counter:4}", "Standard format: IMG_20240115_0001"),

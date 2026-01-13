@@ -213,7 +213,8 @@ internal static class FileService
             return $"{{counter:{padding}}}"; // Keep placeholder for batch processing
         });
 
-        return SanitizeForFilename(result);
+        // Use SanitizeForPath to allow folder separators (/ or \)
+        return SanitizeForPath(result);
     }
 
     public static string SanitizeForFilename(string name)
@@ -221,6 +222,15 @@ internal static class FileService
         var invalid = System.IO.Path.GetInvalidFileNameChars();
         var sanitized = new string(name.Where(c => !invalid.Contains(c)).ToArray());
         return sanitized.Trim();
+    }
+
+    public static string SanitizeForPath(string path)
+    {
+        // Split by path separators, sanitize each segment, then recombine
+        var separators = new[] { '/', '\\' };
+        var segments = path.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+        var sanitizedSegments = segments.Select(SanitizeForFilename).Where(s => !string.IsNullOrWhiteSpace(s));
+        return string.Join(Path.DirectorySeparatorChar, sanitizedSegments);
     }
 
     public static RenamePreviewItem[] GeneratePreview(
