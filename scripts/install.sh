@@ -168,12 +168,18 @@ if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
     info "  export PATH=\"\$PATH:$INSTALL_DIR\""
     info ""
     
-    # Detect shell and suggest appropriate file
-    if [ -n "$BASH_VERSION" ]; then
-        info "For Bash, add to: ~/.bashrc or ~/.bash_profile"
-    elif [ -n "$ZSH_VERSION" ]; then
-        info "For Zsh, add to: ~/.zshrc"
-    fi
+    # Suggest shell-specific config file based on $SHELL
+    case "$SHELL" in
+        */bash)
+            info "For Bash, add to: ~/.bashrc or ~/.bash_profile"
+            ;;
+        */zsh)
+            info "For Zsh, add to: ~/.zshrc"
+            ;;
+        */fish)
+            info "For Fish, add to: ~/.config/fish/config.fish"
+            ;;
+    esac
     
     info ""
     info "To use reshape right now, run:"

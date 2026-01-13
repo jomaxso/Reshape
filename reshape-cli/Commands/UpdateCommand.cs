@@ -299,7 +299,14 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                 
                 // Ensure executable permission
                 var chmod = Process.Start("chmod", $"+x \"{currentExePath}\"");
-                chmod?.WaitForExit();
+                if (chmod != null)
+                {
+                    chmod.WaitForExit();
+                    if (chmod.ExitCode != 0)
+                    {
+                        throw new InvalidOperationException("Failed to set executable permission on updated binary");
+                    }
+                }
             }
         }
         finally

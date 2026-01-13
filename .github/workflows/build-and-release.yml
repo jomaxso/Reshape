@@ -16,6 +16,8 @@ jobs:
   build-ui:
     name: Build Vue UI
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -46,6 +48,8 @@ jobs:
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     needs: build-ui
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
     strategy:
       matrix:
         include:
