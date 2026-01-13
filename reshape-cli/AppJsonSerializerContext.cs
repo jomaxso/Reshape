@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using Reshape.Cli.Commands;
+
 // ============================================================================
 // JSON Serializer Context for Source Generation
 // ============================================================================
@@ -23,6 +25,9 @@ using System.Text.Json.Serialization;
 [JsonSerializable(typeof(RenameResult))]
 [JsonSerializable(typeof(RenameExecuteResponse))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
+[JsonSerializable(typeof(GitHubRelease))]
+[JsonSerializable(typeof(GitHubRelease[]))]
+[JsonSerializable(typeof(GitHubAsset))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,

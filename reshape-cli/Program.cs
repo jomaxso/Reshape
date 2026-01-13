@@ -26,7 +26,8 @@ if (args.Length == 0 || !args.Any(arg => arg == "--no-interactive"))
             .AddChoices(
                 "🌐 Run - Start Web UI",
                  "📁 File - Manage Files",
-                "🎨 Pattern - Manage Patterns"
+                "🎨 Pattern - Manage Patterns",
+                "⬆️ Update - Check for Updates"
             ));
 
     var command = commandString switch
@@ -34,6 +35,7 @@ if (args.Length == 0 || !args.Any(arg => arg == "--no-interactive"))
         "🌐 Run - Start Web UI" => RunCommand.Command,
         "📁 File - Manage Files" => FileCommand.Command,
         "🎨 Pattern - Manage Patterns" => PatternCommand.Command,
+        "⬆️ Update - Check for Updates" => UpdateCommand.Command,
         _ => null
     };
 
@@ -50,6 +52,7 @@ var rootCommand = new RootCommand("Reshape CLI - Batch rename files using metada
             RunCommand.Command,
             FileCommand.Command,
             PatternCommand.Command,
+            UpdateCommand.Command,
         }
 };
 
