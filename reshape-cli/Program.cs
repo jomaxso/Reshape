@@ -1,57 +1,48 @@
-﻿
-using System.CommandLine;
-using Reshape.Cli;
+﻿using System.CommandLine;
 using Reshape.Cli.Commands;
 using Reshape.Cli.Commands.Patterns;
-using Spectre.Console;
 
-// ============================================================================
-// CLI Application Entry Point
-// ============================================================================
-
-// Interactive mode when no arguments provided
-if (args.Length == 0 || !args.Any(arg => arg == "--no-interactive"))
+return await new RootCommand("Reshape CLI - Batch rename files using metadata patterns")
 {
-    AnsiConsole.Write(
-    new FigletText("Reshape CLI")
-        .LeftJustified()
-        .Color(Color.Cyan1));
-
-    AnsiConsole.MarkupLine("[dim]Batch rename files using metadata patterns[/]\n");
-
-    var commandString = AnsiConsole.Prompt(
-        new SelectionPrompt<string>()
-            .Title("[cyan]What would you like to do?[/]")
-            .PageSize(10)
-            .AddChoices(
-                "🌐 Run - Start Web UI",
-                 "📁 File - Manage Files",
-                "🎨 Pattern - Manage Patterns"
-            ));
-
-    var command = commandString switch
-    {
-        "🌐 Run - Start Web UI" => RunCommand.Command,
-        "📁 File - Manage Files" => FileCommand.Command,
-        "🎨 Pattern - Manage Patterns" => PatternCommand.Command,
-        _ => null
-    };
-
-    return command is null
-        ? 0
-        : await command.Parse(args).InvokeAsync();
-}
-
-var rootCommand = new RootCommand("Reshape CLI - Batch rename files using metadata patterns")
-{
+    Action = new ReshapeCliCommand(),
     Options = { GlobalOptions.NoInteractive },
     Subcommands =
+    {
+        new("run", "Starts the Reshape web UI")
         {
-            RunCommand.Command,
-            FileCommand.Command,
-            PatternCommand.Command,
+            Action = new RunCommand()
+        },
+        new("file", "List, rename, and manage files")
+        {
+            Action = new FileCommand(),
+            Subcommands =
+            {
+                new("list", "List files in a folder")
+                {
+                    Action = new ListCommand(),
+                    Options = { GlobalOptions.Path, GlobalOptions.Extension },
+                },
+                new("rename", "Execute rename operations")
+                {
+                    Options = { GlobalOptions.Path, GlobalOptions.Pattern, GlobalOptions.Extension },
+                    Action = new RenameCommand()
+                },
+                new("preview", "Preview rename operations")
+                {
+                    Action = new PreviewCommand(),
+                    Options = { GlobalOptions.Path, GlobalOptions.Pattern, GlobalOptions.Extension },
+                }
+            },
+        },
+        new("pattern", "Manage custom rename patterns")
+        {
+            Action = new PatternCommand(),
+            Subcommands =
+            {
+                PatternCommand.BuildAddCommand(),
+                PatternCommand.BuildRemoveCommand(),
+                PatternCommand.BuildListCommand()
+            },
         }
-};
-
-return await rootCommand.Parse(args).InvokeAsync();
-
+    },
+}.Parse(args).InvokeAsync();
