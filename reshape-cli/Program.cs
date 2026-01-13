@@ -87,10 +87,6 @@ renameCommand.SetAction(input =>
     return RenameCommandHandler.Execute(path, pattern, ext, dryRun, noInteractive);
 });
 
-// Patterns command - Show available patterns
-var patternsCommand = new Command("patterns", "Show available pattern templates");
-patternsCommand.SetAction(_ => PatternsCommandHandler.Execute());
-
 // Pattern command group - Manage custom patterns
 var patternCommand = new Command("pattern", "Manage custom rename patterns");
 
@@ -139,7 +135,6 @@ rootCommand.Subcommands.Add(webUiCommand);
 rootCommand.Subcommands.Add(listCommand);
 rootCommand.Subcommands.Add(previewCommand);
 rootCommand.Subcommands.Add(renameCommand);
-rootCommand.Subcommands.Add(patternsCommand);
 rootCommand.Subcommands.Add(patternCommand);
 
 return await rootCommand.Parse(args).InvokeAsync();
