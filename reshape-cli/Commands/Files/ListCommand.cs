@@ -10,38 +10,16 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class ListCommand : AsynchronousCommandLineAction
 {
-    private static readonly Option<string> PathOption = new("--path")
-    {
-        Description = "Folder path to scan (defaults to current directory)",
-        DefaultValueFactory = c =>
-        {
-            var noInteractive = c.GetValue(GlobalOptions.NoInteractive);
-            return noInteractive ? "." : PromptForPath();
-        }
-    };
-    private static readonly Option<string[]> ExtensionOption = new("--ext")
-    {
-        Description = "Filter by extensions (e.g., .jpg .png)",
-        AllowMultipleArgumentsPerToken = true,
-        DefaultValueFactory = c =>
-        {
-            var noInteractive = c.GetValue(GlobalOptions.NoInteractive);
-            return noInteractive ? [] : PromptForExtensions() ?? [];
-        }
-    };
-
     public static Command Command => new("list", "List files in a folder")
     {
-        Options = { PathOption, ExtensionOption },
+        Options = { GlobalOptions.Path, GlobalOptions.Extension },
         Action = new ListCommand()
     };
 
     public override Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
-        var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
-
-        var path = parseResult.GetRequiredValue(PathOption);
-        var extensions = parseResult.GetRequiredValue(ExtensionOption);
+        var path = parseResult.GetRequiredValue(GlobalOptions.Path);
+        var extensions = parseResult.GetRequiredValue(GlobalOptions.Extension);
 
         try
         {
@@ -58,13 +36,6 @@ internal sealed class ListCommand : AsynchronousCommandLineAction
             AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
             return Task.FromResult(1);
         }
-    }
-
-    private static string PromptForPath()
-    {
-        return AnsiConsole.Ask(
-            "[cyan]Folder path:[/] [dim](press Enter for current directory)[/]",
-            defaultValue: ".");
     }
 
     private static string[]? PromptForExtensions()

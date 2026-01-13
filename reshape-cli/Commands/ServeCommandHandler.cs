@@ -7,23 +7,14 @@ namespace Reshape.Cli.Commands;
 /// <summary>
 /// Handles the 'serve' command to start the Reshape web user interface.
 /// </summary>
-internal sealed class ServeCommandHandler : ICommandHandler, ICommandBuilder
+internal sealed class ServeCommandHandler : AsynchronousCommandLineAction
 {
-    public static Command BuildCommand()
+    public static Command Command => new("serve", "Starts the Reshape web user interface")
     {
-        var command = new Command("serve", "Starts the Reshape web user interface");
-        command.SetAction(async p =>
-        {
-            var interactive = p.RootCommandResult.GetValue(GlobalOptions.NoInteractive);
-            var handler = new ServeCommandHandler();
-            return await handler.RunAsync();
-        });
-        return command;
-    }
+        Action = new ServeCommandHandler()
+    };
 
-    public Task<int> RunInteractiveAsync() => RunAsync();
-
-    public async Task<int> RunAsync()
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         var builder = WebApplication.CreateBuilder();
 

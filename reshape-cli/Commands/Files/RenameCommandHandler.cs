@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using Spectre.Console;
 
 namespace Reshape.Cli.Commands;
@@ -6,7 +7,7 @@ namespace Reshape.Cli.Commands;
 /// <summary>
 /// Handles the 'rename' command to execute rename operations on files.
 /// </summary>
-internal sealed class RenameCommandHandler : ICommandHandler, ICommandBuilder
+internal sealed class RenameCommandHandler : AsynchronousCommandLineAction
 {
     private static readonly string[] CommonExtensions =
     [
@@ -14,16 +15,7 @@ internal sealed class RenameCommandHandler : ICommandHandler, ICommandBuilder
         ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx"
     ];
 
-    private static readonly Option<string> PathOpt = new("--path")
-    {
-        Description = "Folder path (defaults to current directory)",
-        DefaultValueFactory = _ => "."
-    };
-    private static readonly Option<string?> PatternOpt = new("--pattern")
-    {
-        Description = "Rename pattern"
-    };
-    private static readonly Option<bool> DryRunOpt = new("--dry-run")
+    private static readonly Option<bool> DryRunOption = new("--dry-run")
     {
         Description = "Preview changes without executing"
     };
@@ -33,108 +25,65 @@ internal sealed class RenameCommandHandler : ICommandHandler, ICommandBuilder
         AllowMultipleArgumentsPerToken = true
     };
 
-    private string _path = ".";
-    private string? _pattern;
-    private string[]? _extensions;
-    private bool _dryRun;
-    private bool _noInteractive;
-
-    public RenameCommandHandler() { }
-
-    public RenameCommandHandler(string path, string? pattern, string[]? extensions, bool dryRun, bool noInteractive)
+    public static Command Command => new("rename", "Execute rename operations")
     {
-        _path = path;
-        _pattern = pattern;
-        _extensions = extensions;
-        _dryRun = dryRun;
-        _noInteractive = noInteractive;
-    }
+        Options = { GlobalOptions.Path, GlobalOptions.Pattern, DryRunOption, GlobalOptions.Extension },
+        Action = new RenameCommandHandler()
+    };
 
-    public static Command BuildCommand()
+    public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
-        var command = new Command("rename", "Execute rename operations");
+        await Task.Yield();
 
-        command.Add(PathOpt);
-        command.Add(PatternOpt);
-        command.Add(DryRunOpt);
-        command.Add(ExtensionOption);
+        var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
+        var path = parseResult.GetRequiredValue(GlobalOptions.Path);
+        var pattern = parseResult.GetValue(GlobalOptions.Pattern);
+        var extensions = parseResult.GetValue(GlobalOptions.Extension);
+        var dryRun = parseResult.GetValue(DryRunOption);
 
-        command.SetAction(async parseResult =>
+        // Interactive mode if pattern is missing and not in no-interactive mode
+        if (!noInteractive && string.IsNullOrEmpty(pattern))
         {
-            var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
-            var handler = new RenameCommandHandler(
-                parseResult.GetValue(PathOpt)!,
-                parseResult.GetValue(PatternOpt),
-                parseResult.GetValue(ExtensionOption),
-                parseResult.GetValue(DryRunOpt),
-                noInteractive
-            );
-            return noInteractive
-                ? await handler.RunAsync()
-                : await handler.RunInteractiveAsync();
-        });
-
-        return command;
-    }
-
-    public Task<int> RunInteractiveAsync()
-    {
-        _path = PromptForPath();
-        _extensions = PromptForExtensions();
-        _pattern = PromptForPattern();
-        _dryRun = AnsiConsole.Confirm("Dry run (preview only)?", defaultValue: true);
-        _noInteractive = false;
-
-        return RunCoreAsync();
-    }
-
-    public Task<int> RunAsync()
-    {
-        // If pattern is missing and not in no-interactive mode, switch to interactive
-        if (!_noInteractive && string.IsNullOrEmpty(_pattern))
-        {
-            return RunInteractiveAsync();
+            path = PromptForPath();
+            extensions = PromptForExtensions();
+            pattern = PromptForPattern();
+            dryRun = AnsiConsole.Confirm("Dry run (preview only)?", defaultValue: true);
         }
 
-        return RunCoreAsync();
-    }
-
-    private Task<int> RunCoreAsync()
-    {
         try
         {
-            if (string.IsNullOrEmpty(_pattern))
+            if (string.IsNullOrEmpty(pattern))
             {
                 AnsiConsole.MarkupLine("[red]Error: --pattern is required in non-interactive mode[/]");
-                return Task.FromResult(1);
+                return 1;
             }
 
-            var fullPath = Path.GetFullPath(_path);
-            var preview = FileService.GeneratePreview(fullPath, _pattern, _extensions);
+            var fullPath = Path.GetFullPath(path);
+            var preview = FileService.GeneratePreview(fullPath, pattern, extensions);
 
             // Show preview in interactive mode
-            if (!_noInteractive)
+            if (!noInteractive)
             {
-                DisplayPreviewTable(preview, _pattern);
+                DisplayPreviewTable(preview, pattern);
                 AnsiConsole.WriteLine();
             }
 
             // Confirm operation
-            if (!_dryRun && !_noInteractive && !ConfirmRename(preview))
+            if (!dryRun && !noInteractive && !ConfirmRename(preview))
             {
                 AnsiConsole.MarkupLine("[yellow]Operation cancelled[/]");
-                return Task.FromResult(0);
+                return 0;
             }
 
-            var results = FileService.ExecuteRename(preview, fullPath, _dryRun);
-            DisplayResults(results, _dryRun);
+            var results = FileService.ExecuteRename(preview, fullPath, dryRun);
+            DisplayResults(results, dryRun);
 
-            return Task.FromResult(0);
+            return 0;
         }
         catch (Exception ex)
         {
             AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
-            return Task.FromResult(1);
+            return 1;
         }
     }
 

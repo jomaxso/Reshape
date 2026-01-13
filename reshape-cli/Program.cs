@@ -32,10 +32,10 @@ if (args.Length == 0 || !args.Any(arg => arg == "--no-interactive"))
 
     var result = command switch
     {
-        "🌐 Start Web UI" => new ServeCommandHandler().RunInteractiveAsync(),
+        "🌐 Start Web UI" => ServeCommandHandler.Command.Parse(args).InvokeAsync(),
         "📋 List Files" => ListCommand.Command.Parse(args).InvokeAsync(),
-        "👁️  Preview Rename" => new PreviewCommandHandler().RunInteractiveAsync(),
-        "✏️  Execute Rename" => new RenameCommandHandler().RunInteractiveAsync(),
+        "👁️  Preview Rename" => PreviewCommand.Command.Parse(args).InvokeAsync(),
+        "✏️  Execute Rename" => RenameCommandHandler.Command.Parse(args).InvokeAsync(),
         "🎨 Manage Patterns" => PatternCommand.Command.Parse(args).InvokeAsync(),
         _ => Task.FromResult(0)
     };
@@ -49,10 +49,10 @@ var rootCommand = new RootCommand("Reshape CLI - Batch rename files using metada
     Subcommands =
         {
             ListCommand.Command,
-            PreviewCommandHandler.BuildCommand(),
-            RenameCommandHandler.BuildCommand(),
+            PreviewCommand.Command,
+            RenameCommandHandler.Command,
             PatternCommand.Command,
-            ServeCommandHandler.BuildCommand(),
+            ServeCommandHandler.Command,
         }
 };
 
