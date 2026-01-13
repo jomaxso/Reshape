@@ -19,8 +19,8 @@
                     <div class="dialog-content">
                         <div class="form-group">
                             <label>Muster</label>
-                            <input v-model="newPattern" type="text"
-                                placeholder="{year}-{month}-{day}_{filename}" class="form-input" />
+                            <input v-model="newPattern" type="text" placeholder="{year}-{month}-{day}_{filename}"
+                                class="form-input" />
                         </div>
                         <div class="form-group">
                             <label>Beschreibung</label>
@@ -67,7 +67,6 @@ interface Props {
 interface Emits {
     (e: 'add', pattern: string, description: string): Promise<void>;
     (e: 'remove', pattern: string): Promise<void>;
-    (e: 'refresh'): void;
 }
 
 const props = defineProps<Props>();
@@ -102,7 +101,6 @@ async function handleAdd() {
         error.value = '';
         await emit('add', newPattern.value.trim(), newDescription.value.trim());
         closeAddDialog();
-        emit('refresh');
     } catch (e) {
         error.value = e instanceof Error ? e.message : 'Fehler beim Hinzufügen';
     }
@@ -115,7 +113,6 @@ async function handleRemove(pattern: string) {
 
     try {
         await emit('remove', pattern);
-        emit('refresh');
     } catch (e) {
         error.value = e instanceof Error ? e.message : 'Fehler beim Löschen';
     }

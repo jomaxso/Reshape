@@ -17,19 +17,19 @@
                 <div class="config-grid">
                     <div class="form-group">
                         <label for="startDate">Startdatum</label>
-                        <input id="startDate" type="date" v-model="startDate" />
+                        <input id="startDate" key="vacation-start-date" type="date" v-model="startDate" />
                         <span class="hint">Auto: Ältestes Datei-Datum</span>
                     </div>
 
                     <div class="form-group">
                         <label for="dayFolderPattern">Ordner-Muster</label>
-                        <input id="dayFolderPattern" type="text" v-model="dayFolderPattern"
+                        <input id="dayFolderPattern" key="vacation-day-folder" type="text" v-model="dayFolderPattern"
                             placeholder="Tag {day_number}" />
                     </div>
 
                     <div class="form-group full-width">
                         <label for="filePattern">Datei-Namens-Muster</label>
-                        <input id="filePattern" type="text" v-model="localFilePattern"
+                        <input id="filePattern" key="vacation-file-pattern" type="text" v-model="localFilePattern"
                             placeholder="{year}-{month}-{day}_{counter:3}" />
                     </div>
                 </div>
@@ -46,7 +46,7 @@
                 <Transition name="slide">
                     <div v-if="useSubfolders" class="form-group subfolder-input">
                         <label for="subfolderPattern">Unterordner-Muster</label>
-                        <input id="subfolderPattern" type="text" v-model="subfolderPattern"
+                        <input id="subfolderPattern" key="vacation-subfolder" type="text" v-model="subfolderPattern"
                             placeholder="{camera_model}" />
                     </div>
                 </Transition>

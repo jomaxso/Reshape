@@ -19,8 +19,7 @@
                     <div class="pattern-templates">
                         <button v-for="pattern in patterns" :key="pattern.pattern"
                             :class="['pattern-chip', { active: selectedPattern === pattern.pattern && !customPattern }]"
-                            :title="pattern.description" @click="handlePatternSelect(pattern.pattern)"
-                            :disabled="loading">
+                            :title="pattern.description" @click="handlePatternSelect(pattern.pattern)">
                             {{ pattern.pattern }}
                         </button>
                     </div>
@@ -30,8 +29,8 @@
                 <div class="section">
                     <label class="section-label">Eigenes Muster</label>
                     <div class="input-wrapper">
-                        <input v-model="customPattern" type="text" placeholder="{year}-{month}-{day}_{filename}"
-                            :disabled="loading" />
+                        <input key="custom-pattern-input" v-model="customPattern" type="text"
+                            placeholder="{year}-{month}-{day}_{filename}" />
                     </div>
                 </div>
 

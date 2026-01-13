@@ -70,6 +70,8 @@ async function handleAddPattern(pattern: string, description: string) {
     if (!response.success) {
       throw new Error(response.message || 'Failed to add pattern');
     }
+    // Refresh patterns immediately after successful add
+    await refreshPatterns();
   } catch (e) {
     throw e;
   }
@@ -82,6 +84,8 @@ async function handleRemovePattern(pattern: string) {
     if (!response.success) {
       throw new Error(response.message || 'Failed to remove pattern');
     }
+    // Refresh patterns immediately after successful remove
+    await refreshPatterns();
   } catch (e) {
     throw e;
   }
@@ -326,7 +330,7 @@ function handleToggleVacationItem(item: RenamePreviewItem) {
 
           <!-- Pattern Manager -->
           <PatternManager :patterns="patterns" :default-pattern-count="DEFAULT_PATTERN_COUNT" @add="handleAddPattern"
-            @remove="handleRemovePattern" @refresh="refreshPatterns" />
+            @remove="handleRemovePattern" />
 
         </div>
       </div>
