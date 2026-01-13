@@ -315,6 +315,7 @@ dotnet publish -c Release -r win-x64 --self-contained
 |----------|-------------|
 | [README.md](README.md) | This file - overview and quick start |
 | [VACATION_MODE.md](VACATION_MODE.md) | Vacation mode detailed documentation |
+| [docs/CICD.md](docs/CICD.md) | CI/CD pipeline and release workflow |
 | [docs/CLI.md](docs/CLI.md) | CLI reference documentation |
 | [docs/API.md](docs/API.md) | REST API documentation |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development guide |
