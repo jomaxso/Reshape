@@ -14,28 +14,22 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class UpdateCommand : AsynchronousCommandLineAction
 {
-    private static readonly Option<bool> StableOption = new("--stable")
+    public static readonly Option<bool> StableOption = new("--stable")
     {
         Description = "Only update to stable releases (default)",
         Arity = ArgumentArity.Zero
     };
 
-    private static readonly Option<bool> PrereleaseOption = new("--prerelease")
+    public static readonly Option<bool> PrereleaseOption = new("--prerelease")
     {
         Description = "Include prerelease versions",
         Arity = ArgumentArity.Zero
     };
 
-    private static readonly Option<bool> CheckOption = new("--check")
+    public static readonly Option<bool> CheckOption = new("--check")
     {
         Description = "Check for updates without installing",
         Arity = ArgumentArity.Zero
-    };
-
-    public static Command Command => new("update", "Update Reshape CLI to the latest version")
-    {
-        Options = { StableOption, PrereleaseOption, CheckOption },
-        Action = new UpdateCommand()
     };
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)

@@ -58,7 +58,7 @@ internal sealed class PatternCommand : AsynchronousCommandLineAction
         }
     }
 
-    private static Command BuildAddCommand()
+    public static Command BuildAddCommand()
     {
         var command = new Command("add", "Add a new custom pattern");
 
@@ -87,7 +87,7 @@ internal sealed class PatternCommand : AsynchronousCommandLineAction
         return command;
     }
 
-    private static Command BuildRemoveCommand()
+    public static Command BuildRemoveCommand()
     {
         var command = new Command("remove", "Remove a custom pattern");
 
@@ -109,7 +109,7 @@ internal sealed class PatternCommand : AsynchronousCommandLineAction
         return command;
     }
 
-    private static Command BuildListCommand()
+    public static Command BuildListCommand()
     {
         var command = new Command("list", "List all patterns (default and custom)");
         command.SetAction(_ => List());

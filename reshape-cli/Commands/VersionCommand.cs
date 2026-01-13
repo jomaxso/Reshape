@@ -10,11 +10,6 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class VersionCommand : AsynchronousCommandLineAction
 {
-    public static Command Command => new("version", "Display version information")
-    {
-        Action = new VersionCommand()
-    };
-
     public override Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         var version = Assembly.GetExecutingAssembly()
