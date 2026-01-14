@@ -55,15 +55,17 @@ jobs:
 
                       **⚠️ WARNING: Do not do this without first carefully reviewing the code of this PR to satisfy yourself it is safe.**
 
-                      **Windows (PowerShell):**
+                      \`\`\`bash
+                      curl -fsSL https://raw.githubusercontent.com/${repo}/main/scripts/get-reshape-pr.sh | bash -s -- ${prNumber}
+                      \`\`\`
+                      Or
+
+                      Run remotely in PowerShell:
                       \`\`\`powershell
                       iex "& { $(irm https://raw.githubusercontent.com/${repo}/main/scripts/get-reshape-pr.ps1) } ${prNumber}"
                       \`\`\`
 
-                      **Linux / macOS (Bash):**
-                      \`\`\`bash
-                      curl -fsSL https://raw.githubusercontent.com/${repo}/main/scripts/get-reshape-pr.sh | bash -s -- ${prNumber}
-                      \`\`\`
+                      <!-- pr-install-instructions -->
                       `;
 
                       // Find existing comment
