@@ -14,12 +14,6 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class UpdateCommand : AsynchronousCommandLineAction
 {
-    public static readonly Option<bool> StableOption = new("--stable")
-    {
-        Description = "Only update to stable releases (default)",
-        Arity = ArgumentArity.Zero
-    };
-
     public static readonly Option<bool> PrereleaseOption = new("--prerelease")
     {
         Description = "Include prerelease versions",
@@ -60,11 +54,11 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             }
 
             var latestVersion = release.TagName.TrimStart('v');
-            
+
             if (IsNewerVersion(currentVersion, latestVersion))
             {
                 AnsiConsole.MarkupLine($"[green]✓ New version available: [bold]{release.TagName}[/][/]");
-                
+
                 if (!string.IsNullOrEmpty(release.Name))
                 {
                     AnsiConsole.MarkupLine($"[dim]  {Markup.Escape(release.Name)}[/]");
@@ -85,10 +79,10 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
 
                 // Perform update
                 await PerformUpdate(release, cancellationToken);
-                
+
                 AnsiConsole.MarkupLine($"\n[green]✓ Successfully updated to {release.TagName}![/]");
                 AnsiConsole.MarkupLine("[dim]Run 'reshape --version' to verify[/]");
-                
+
                 return 0;
             }
             else
@@ -137,7 +131,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                     $"https://api.github.com/repos/{repo}/releases",
                     AppJsonSerializerContext.Default.GitHubReleaseArray,
                     cancellationToken);
-                
+
                 return releases?.FirstOrDefault();
             }
             else
@@ -147,7 +141,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                     $"https://api.github.com/repos/{repo}/releases/latest",
                     AppJsonSerializerContext.Default.GitHubRelease,
                     cancellationToken);
-                
+
                 return release;
             }
         }
@@ -160,7 +154,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
     private static bool IsNewerVersion(string currentVersion, string latestVersion)
     {
         // Simple version comparison
-        if (Version.TryParse(currentVersion, out var current) && 
+        if (Version.TryParse(currentVersion, out var current) &&
             Version.TryParse(latestVersion, out var latest))
         {
             return latest > current;
@@ -225,11 +219,11 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
         try
         {
             var archivePath = Path.Combine(tempDir, Path.GetFileName(downloadUrl));
-            
+
             // Download
             var response = await client.GetAsync(downloadUrl, cancellationToken);
             response.EnsureSuccessStatusCode();
-            
+
             await using (var fs = File.Create(archivePath))
             {
                 await response.Content.CopyToAsync(fs, cancellationToken);
@@ -265,10 +259,10 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             }
 
             // Find the new executable
-            var exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) 
-                ? "Reshape.Cli.exe" 
+            var exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? "Reshape.Cli.exe"
                 : "Reshape.Cli";
-            
+
             var newExePath = Directory.GetFiles(extractDir, exeName, SearchOption.AllDirectories).FirstOrDefault();
             if (newExePath == null)
             {
@@ -276,7 +270,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             }
 
             // Get current executable path
-            var currentExePath = Environment.ProcessPath 
+            var currentExePath = Environment.ProcessPath
                 ?? Process.GetCurrentProcess().MainModule?.FileName
                 ?? throw new InvalidOperationException("Could not determine current executable path");
 
@@ -290,7 +284,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             {
                 // On Unix, we can replace directly
                 File.Copy(newExePath, currentExePath, overwrite: true);
-                
+
                 // Ensure executable permission
                 var chmod = Process.Start("chmod", $"+x \"{currentExePath}\"");
                 if (chmod != null)

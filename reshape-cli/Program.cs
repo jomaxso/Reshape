@@ -47,11 +47,7 @@ return await new RootCommand("Reshape CLI - Batch rename files using metadata pa
         new("update", "Update Reshape CLI to the latest version")
         {
             Action = new UpdateCommand(),
-            Options = { UpdateCommand.StableOption, UpdateCommand.PrereleaseOption, UpdateCommand.CheckOption }
-        },
-        new("version", "Display version information")
-        {
-            Action = new VersionCommand()
+            Options = { UpdateCommand.PrereleaseOption, UpdateCommand.CheckOption }
         }
     },
 }.Parse(args).InvokeAsync();
