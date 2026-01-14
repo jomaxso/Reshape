@@ -63,13 +63,14 @@ try {
 
     $runs = Invoke-RestMethod -Uri $workflowsUrl -Headers $headers
     
-    # Find the most recent run for this PR
+    # Find the most recent "Build and Release" run for this PR
     $prRun = $runs.workflow_runs | Where-Object { 
-        $_.pull_requests.number -contains $PrNumber 
+        $_.pull_requests.number -contains $PrNumber -and
+        $_.name -eq 'Build and Release'
     } | Select-Object -First 1
 
     if (-not $prRun) {
-        Write-Host "❌ No successful workflow run found for PR #$PrNumber" -ForegroundColor Red
+        Write-Host "❌ No successful 'Build and Release' workflow run found for PR #$PrNumber" -ForegroundColor Red
         Write-Host "   Check if the PR has completed builds: https://github.com/$repo/pull/$PrNumber/checks" -ForegroundColor Yellow
         exit 1
     }

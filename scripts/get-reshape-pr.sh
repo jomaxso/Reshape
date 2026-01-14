@@ -103,12 +103,13 @@ RESPONSE=$(curl -fsSL -H "Accept: application/vnd.github+json" \
     -H "User-Agent: Reshape-PR-Installer" \
     "$WORKFLOWS_URL")
 
-# Find the most recent run for this PR
-RUN_ID=$(echo "$RESPONSE" | grep -o "\"id\":[0-9]*" | head -1 | cut -d':' -f2)
-RUN_URL=$(echo "$RESPONSE" | grep -o "\"html_url\":\"[^\"]*\"" | head -1 | cut -d'"' -f4)
+# Find the most recent "Build and Release" run for this PR
+# We need to parse JSON to filter by workflow name and PR number
+RUN_ID=$(echo "$RESPONSE" | jq -r ".workflow_runs[] | select(.name == \"Build and Release\" and (.pull_requests[].number == $PR_NUMBER)) | .id" | head -1)
+RUN_URL=$(echo "$RESPONSE" | jq -r ".workflow_runs[] | select(.name == \"Build and Release\" and (.pull_requests[].number == $PR_NUMBER)) | .html_url" | head -1)
 
-if [[ -z "$RUN_ID" ]]; then
-    echo -e "${RED}❌ No successful workflow run found for PR #$PR_NUMBER${NC}"
+if [[ -z "$RUN_ID" ]] || [[ "$RUN_ID" == "null" ]]; then
+    echo -e "${RED}❌ No successful 'Build and Release' workflow run found for PR #$PR_NUMBER${NC}"
     echo -e "${YELLOW}   Check if the PR has completed builds: https://github.com/$REPO/pull/$PR_NUMBER/checks${NC}"
     exit 1
 fi
