@@ -9,17 +9,6 @@ namespace Reshape.Cli.Commands.Patterns;
 /// </summary>
 internal sealed class PatternCommand : AsynchronousCommandLineAction
 {
-    public static Command Command => new("pattern", "Manage custom rename patterns")
-    {
-        Subcommands =
-        {
-            BuildSetCommand(),
-            BuildRemoveCommand(),
-            BuildListCommand()
-        },
-        Action = new PatternCommand()
-    };
-
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         await Task.Yield();

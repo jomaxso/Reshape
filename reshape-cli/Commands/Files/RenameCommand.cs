@@ -9,12 +9,6 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class RenameCommand : AsynchronousCommandLineAction
 {
-    public static Command Command => new("rename", "Execute rename operations")
-    {
-        Options = { GlobalOptions.Path, GlobalOptions.Pattern, GlobalOptions.Extension },
-        Action = new RenameCommand()
-    };
-
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         await Task.Yield();

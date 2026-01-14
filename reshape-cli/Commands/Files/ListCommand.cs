@@ -10,12 +10,6 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class ListCommand : AsynchronousCommandLineAction
 {
-    public static Command Command => new("list", "List files in a folder")
-    {
-        Options = { GlobalOptions.Path, GlobalOptions.Extension },
-        Action = new ListCommand()
-    };
-
     public override Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         var path = parseResult.GetRequiredValue(GlobalOptions.Path);

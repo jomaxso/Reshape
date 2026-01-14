@@ -9,11 +9,6 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class RunCommand : AsynchronousCommandLineAction
 {
-    public static Command Command => new("run", "Starts the Reshape web UI")
-    {
-        Action = new RunCommand()
-    };
-
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         var builder = WebApplication.CreateBuilder();

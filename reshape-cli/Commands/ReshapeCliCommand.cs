@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using Reshape.Cli.Commands;
 using Reshape.Cli.Commands.Patterns;
 using Spectre.Console;
 

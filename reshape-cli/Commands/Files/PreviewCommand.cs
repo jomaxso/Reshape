@@ -9,12 +9,6 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class PreviewCommand : AsynchronousCommandLineAction
 {
-    public static Command Command => new("preview", "Preview rename operations")
-    {
-        Options = { GlobalOptions.Path, GlobalOptions.Pattern, GlobalOptions.Extension },
-        Action = new PreviewCommand()
-    };
-
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         await Task.Yield();
