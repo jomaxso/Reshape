@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     Downloads and installs the Reshape CLI from a GitHub Actions artifact
-    built for a specific pull request.
+    built for a specific pull request using GitHub CLI (gh).
 
 .PARAMETER PrNumber
     The pull request number to install from.
@@ -18,6 +18,9 @@
 
 .EXAMPLE
     ./get-reshape-pr.ps1 -PrNumber 9 -OutputPath "C:\Tools\Reshape"
+
+.NOTES
+    Requires GitHub CLI (gh) to be installed and authenticated
 #>
 
 param(
@@ -31,11 +34,17 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repo = "jomaxso/Reshape"
-$artifactName = "reshape-win-x64"
 
 Write-Host "🔄 Reshape PR Installer" -ForegroundColor Cyan
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
 Write-Host ""
+
+# Check for gh CLI
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    Write-Host "❌ GitHub CLI (gh) is required but not installed." -ForegroundColor Red
+    Write-Host "   Install from: https://cli.github.com/" -ForegroundColor Yellow
+    exit 1
+}
 
 # Warning message
 Write-Host "⚠️  WARNING: Only install from PRs you trust!" -ForegroundColor Yellow
@@ -50,79 +59,111 @@ if ($confirmation -ne 'y' -and $confirmation -ne 'Y') {
 }
 
 Write-Host ""
-Write-Host "📦 Fetching PR #$PrNumber artifacts..." -ForegroundColor Green
-
-# Get workflow runs for this PR
-$workflowsUrl = "https://api.github.com/repos/$repo/actions/runs?event=pull_request&status=success&per_page=100"
+Write-Host "📦 Fetching PR #$PrNumber information..." -ForegroundColor Green
 
 try {
-    $headers = @{
-        'Accept'     = 'application/vnd.github+json'
-        'User-Agent' = 'Reshape-PR-Installer'
-    }
-
-    $runs = Invoke-RestMethod -Uri $workflowsUrl -Headers $headers
+    # Get PR head SHA
+    $prInfo = gh api "repos/$repo/pulls/$PrNumber" --jq '{head_sha: .head.sha, state: .state}' | ConvertFrom-Json
     
-    # Find the most recent "Build and Release" run for this PR
-    $prRun = $runs.workflow_runs | Where-Object { 
-        $_.pull_requests.number -contains $PrNumber -and
-        $_.name -eq 'Build and Release'
-    } | Select-Object -First 1
-
-    if (-not $prRun) {
-        Write-Host "❌ No successful 'Build and Release' workflow run found for PR #$PrNumber" -ForegroundColor Red
-        Write-Host "   Check if the PR has completed builds: https://github.com/$repo/pull/$PrNumber/checks" -ForegroundColor Yellow
+    if ($prInfo.state -ne "open") {
+        Write-Host "⚠️  Warning: PR #$PrNumber is $($prInfo.state)" -ForegroundColor Yellow
+    }
+    
+    $headSha = $prInfo.head_sha
+    Write-Host "   PR HEAD SHA: $headSha" -ForegroundColor Gray
+    
+    # Find workflow run for this PR
+    Write-Host "🔍 Finding Build and Release workflow run..." -ForegroundColor Green
+    
+    $workflowRuns = gh api "repos/$repo/actions/workflows/build-and-release.yml/runs?event=pull_request&head_sha=$headSha" --jq '.workflow_runs | sort_by(.created_at) | reverse | .[0] | {id: .id, status: .status, conclusion: .conclusion, html_url: .html_url}' | ConvertFrom-Json
+    
+    if (-not $workflowRuns.id) {
+        Write-Host "❌ No Build and Release workflow run found for this PR" -ForegroundColor Red
+        Write-Host "   The workflow may not have started yet." -ForegroundColor Yellow
+        Write-Host "   Check: https://github.com/$repo/pull/$PrNumber/checks" -ForegroundColor Yellow
         exit 1
     }
-
-    Write-Host "✅ Found workflow run: $($prRun.name) #$($prRun.run_number)" -ForegroundColor Green
-    Write-Host "   Status: $($prRun.status) | Conclusion: $($prRun.conclusion)" -ForegroundColor Gray
-    Write-Host ""
-
-    # Get artifacts for this run
-    $artifactsUrl = $prRun.artifacts_url
-    $artifacts = Invoke-RestMethod -Uri $artifactsUrl -Headers $headers
-
-    $artifact = $artifacts.artifacts | Where-Object { $_.name -eq $artifactName } | Select-Object -First 1
-
-    if (-not $artifact) {
-        Write-Host "❌ Artifact '$artifactName' not found" -ForegroundColor Red
-        Write-Host "   Available artifacts:" -ForegroundColor Yellow
-        $artifacts.artifacts | ForEach-Object { Write-Host "   - $($_.name)" -ForegroundColor Gray }
+    
+    $runId = $workflowRuns.id
+    $runStatus = $workflowRuns.status
+    $runConclusion = $workflowRuns.conclusion
+    
+    Write-Host "   Run ID: $runId" -ForegroundColor Gray
+    Write-Host "   Status: $runStatus | Conclusion: $runConclusion" -ForegroundColor Gray
+    
+    if ($runStatus -ne "completed") {
+        Write-Host "⏳ Workflow is still $runStatus. Please wait for it to complete." -ForegroundColor Yellow
+        Write-Host "   Check: $($workflowRuns.html_url)" -ForegroundColor Yellow
         exit 1
     }
-
-    Write-Host "📥 Downloading artifact: $($artifact.name)" -ForegroundColor Green
-    Write-Host "   Size: $([math]::Round($artifact.size_in_bytes / 1MB, 2)) MB" -ForegroundColor Gray
+    
+    if ($runConclusion -ne "success") {
+        Write-Host "❌ Workflow run did not succeed (conclusion: $runConclusion)" -ForegroundColor Red
+        Write-Host "   Check: $($workflowRuns.html_url)" -ForegroundColor Yellow
+        exit 1
+    }
+    
+    Write-Host "✅ Found successful workflow run!" -ForegroundColor Green
     Write-Host ""
-
-    # GitHub requires authentication to download artifacts via API
-    # So we'll direct users to download manually or use gh CLI
-    Write-Host "⚠️  GitHub requires authentication to download artifacts." -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "Option 1: Download manually" -ForegroundColor Cyan
-    Write-Host "  1. Go to: $($prRun.html_url)" -ForegroundColor White
-    Write-Host "  2. Scroll to 'Artifacts'" -ForegroundColor White
-    Write-Host "  3. Download '$artifactName.zip'" -ForegroundColor White
-    Write-Host "  4. Extract to: $OutputPath" -ForegroundColor White
-    Write-Host ""
-    Write-Host "Option 2: Use GitHub CLI (gh)" -ForegroundColor Cyan
-    Write-Host "  gh run download $($prRun.id) --name $artifactName --repo $repo" -ForegroundColor White
-    Write-Host ""
-    Write-Host "Direct link to workflow run:" -ForegroundColor Magenta
-    Write-Host "  $($prRun.html_url)" -ForegroundColor Blue
-
+    
+    # Determine artifact name based on OS
+    $artifactName = "reshape-win-x64"
+    
+    Write-Host "📥 Downloading artifact: $artifactName" -ForegroundColor Green
+    
+    # Create temp directory
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "reshape-pr-$PrNumber-$([System.Guid]::NewGuid().ToString('N').Substring(0,8))"
+    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+    
+    try {
+        # Download artifact using gh CLI
+        $downloadDir = Join-Path $tempDir "download"
+        gh run download $runId --name $artifactName --dir $downloadDir --repo $repo
+        
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to download artifact"
+        }
+        
+        Write-Host "✅ Download complete!" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "📦 Installing to: $OutputPath" -ForegroundColor Green
+        
+        # Create output directory
+        if (-not (Test-Path $OutputPath)) {
+            New-Item -ItemType Directory -Path $OutputPath -Force | Out-Null
+        }
+        
+        # Find and extract archive
+        $archive = Get-ChildItem -Path $downloadDir -Filter "*.zip" -Recurse | Select-Object -First 1
+        
+        if (-not $archive) {
+            throw "No archive found in downloaded artifact"
+        }
+        
+        # Extract
+        Expand-Archive -Path $archive.FullName -DestinationPath $OutputPath -Force
+        
+        Write-Host "✅ Installation complete!" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+        Write-Host "🎉 Reshape CLI from PR #$PrNumber is ready!" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Run the CLI:" -ForegroundColor Cyan
+        Write-Host "   $OutputPath\reshape.exe run" -ForegroundColor White
+        Write-Host ""
+        Write-Host "Or add to PATH:" -ForegroundColor Cyan
+        Write-Host "   `$env:PATH += `";$OutputPath`"" -ForegroundColor White
+        Write-Host "   reshape run" -ForegroundColor White
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    }
+    finally {
+        # Cleanup
+        if (Test-Path $tempDir) {
+            Remove-Item $tempDir -Recurse -Force
+        }
+    }
 }
 catch {
     Write-Host "❌ Error: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
-
-Write-Host ""
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-Write-Host "💡 After extracting, add to PATH:" -ForegroundColor Cyan
-Write-Host "   `$env:PATH += `";$OutputPath`"" -ForegroundColor White
-Write-Host ""
-Write-Host "   Or run directly:" -ForegroundColor Cyan
-Write-Host "   $OutputPath\reshape.exe run" -ForegroundColor White
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
