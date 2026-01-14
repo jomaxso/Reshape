@@ -1,0 +1,136 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for Reshape
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please fill out the information below to help us understand your request.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: A clear and concise description of the feature you'd like to see
+      placeholder: Describe the feature...
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case / Problem
+      description: Explain the problem this feature would solve or the use case it would enable
+      placeholder: |
+        When I'm organizing my photos, I need to...
+        This would help me...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component would this feature affect?
+      options:
+        - CLI
+        - Web UI
+        - Both
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this feature to work? Describe the expected behavior and interface
+      placeholder: |
+        The feature could work like this:
+        1. User does...
+        2. System responds...
+        3. Result is...
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: |
+        I've tried... but it doesn't work because...
+        Alternative approach could be...
+    validations:
+      required: false
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples
+      description: Provide examples of how you'd use this feature (commands, UI mockups, etc.)
+      placeholder: |
+        # Example CLI command:
+        reshape organize --by location
+
+        # Example pattern:
+        {location}/{year}/{filename}
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve my workflow
+        - High - Critical for my use case
+    validations:
+      required: false
+
+  - type: dropdown
+    id: breaking-change
+    attributes:
+      label: Breaking Change
+      description: Would this require breaking changes to existing functionality?
+      options:
+        - "No - Fully backward compatible"
+        - "Yes - Would change existing behavior"
+        - "Maybe - Depends on implementation"
+        - "Not sure"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, mockups, or references that would help
+      placeholder: Add any other relevant information, links to similar features in other tools, etc.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be interested in contributing this feature?
+      options:
+        - label: I would be willing to implement this feature and submit a PR
+          required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues to ensure this hasn't been requested before
+          required: true
+        - label: I have provided a clear description and use case
+          required: true
+        - label: This feature aligns with Reshape's purpose (file renaming and organization)
+          required: true
