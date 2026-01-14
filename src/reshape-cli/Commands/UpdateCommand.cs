@@ -703,6 +703,9 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             {
                 // On Windows, we need to handle locked files
                 ReplaceWindowsExecutable(currentExePath, newExePath);
+
+                // Check and add to PATH if needed
+                EnsureInPath(currentExePath);
             }
             else
             {
@@ -765,6 +768,45 @@ del ""%~f0""
             Process.Start(psi);
 
             AnsiConsole.MarkupLine("\n[yellow]Note: The update will complete after this process exits.[/]");
+        }
+    }
+
+    private static void EnsureInPath(string executablePath)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(executablePath);
+            if (string.IsNullOrEmpty(directory))
+                return;
+
+            // Get current user PATH
+            var userPath = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.User) ?? string.Empty;
+
+            // Check if directory is already in PATH (case-insensitive)
+            var pathDirs = userPath.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            var isInPath = pathDirs.Any(p => string.Equals(
+                Path.GetFullPath(p.Trim()),
+                Path.GetFullPath(directory),
+                StringComparison.OrdinalIgnoreCase));
+
+            if (!isInPath)
+            {
+                AnsiConsole.MarkupLine("\n[cyan]Adding installation directory to user PATH...[/]");
+
+                var newPath = string.IsNullOrEmpty(userPath)
+                    ? directory
+                    : $"{userPath.TrimEnd(';')};{directory}";
+
+                Environment.SetEnvironmentVariable("Path", newPath, EnvironmentVariableTarget.User);
+
+                AnsiConsole.MarkupLine($"[green]✓ Added to PATH: {Markup.Escape(directory)}[/]");
+                AnsiConsole.MarkupLine("[yellow]⚠ Please restart your terminal for PATH changes to take effect[/]");
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Warning: Could not add to PATH: {Markup.Escape(ex.Message)}[/]");
+            AnsiConsole.MarkupLine("[dim]You may need to add the installation directory to your PATH manually[/]");
         }
     }
 }

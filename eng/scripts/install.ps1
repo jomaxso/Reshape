@@ -46,13 +46,15 @@ $apiUrl = "https://api.github.com/repos/$repo/releases"
 try {
     if ($Version -eq "latest") {
         Write-Info "Fetching latest release information..."
-        $release = Invoke-RestMethod -Uri "$apiUrl/latest" -Headers @{"User-Agent"="Reshape-Installer"}
+        $release = Invoke-RestMethod -Uri "$apiUrl/latest" -Headers @{"User-Agent" = "Reshape-Installer" }
         $Version = $release.tag_name
-    } else {
-        Write-Info "Fetching release information for $Version..."
-        $release = Invoke-RestMethod -Uri "$apiUrl/tags/$Version" -Headers @{"User-Agent"="Reshape-Installer"}
     }
-} catch {
+    else {
+        Write-Info "Fetching release information for $Version..."
+        $release = Invoke-RestMethod -Uri "$apiUrl/tags/$Version" -Headers @{"User-Agent" = "Reshape-Installer" }
+    }
+}
+catch {
     Write-Error "Failed to fetch release information: $_"
     exit 1
 }
@@ -82,7 +84,7 @@ try {
     $archivePath = Join-Path $tempDir $assetName
     
     Write-Info "Downloading from: $downloadUrl"
-    Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -Headers @{"User-Agent"="Reshape-Installer"}
+    Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -Headers @{"User-Agent" = "Reshape-Installer" }
     Write-Success "Downloaded successfully"
 
     # Extract archive
@@ -112,7 +114,8 @@ try {
     if (Test-Path $targetPath) {
         try {
             Remove-Item $targetPath -Force
-        } catch {
+        }
+        catch {
             Write-Warning "Could not replace existing file (it may be in use)"
             $tempTarget = Join-Path $InstallDir "reshape.new.exe"
             Copy-Item $exePath.FullName $tempTarget -Force
@@ -132,17 +135,40 @@ try {
     $isInPath = $pathDirs -contains $InstallDir
 
     if (-not $isInPath) {
-        Write-Warning "`nⓘ Installation directory is not in your PATH"
-        Write-Info "To add it to your PATH, run:"
-        Write-Info '  $env:PATH += ";$InstallDir"'
-        Write-Info "Or add it permanently via System Environment Variables"
-        Write-Info ""
-        Write-Info "To use reshape right now, run:"
-        Write-Info "  & '$targetPath' --help"
+        Write-Info "`nAdding installation directory to user PATH..."
+        
+        # Get current user PATH from registry
+        $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+        
+        # Add install directory if not already present
+        if ($userPath -notlike "*$InstallDir*") {
+            $newPath = if ($userPath) { "$userPath;$InstallDir" } else { $InstallDir }
+            
+            try {
+                [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+                Write-Success "✓ Added to user PATH permanently"
+                Write-Info "  Location: $InstallDir"
+                Write-Info ""
+                Write-Warning "⚠ Please restart your terminal for PATH changes to take effect"
+                Write-Info "  Or run this in your current session:"
+                Write-Info "  `$env:PATH += `;$InstallDir`"
+            } catch {
+                Write-Warning "Could not automatically add to PATH: $_"
+                Write-Info "To add it manually, run:"
+                Write-Info "  [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + ';$InstallDir', 'User')"
+            }
+        } else {
+            Write-Success "`n✓ Installation directory already in user PATH"
+        }
+        
+        # Add to current session PATH
+        $env:PATH += "; $InstallDir"
+        Write-Success "`n✓ You can now use the 'reshape' command in this session"
     } else {
         Write-Success "`n✓ You can now use the 'reshape' command"
-        Write-Info "Try: reshape --help"
     }
+    
+    Write-Info "Try: reshape --help"
 
 } finally {
     # Cleanup

@@ -39,10 +39,16 @@
 iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) }"
 ```
 
+This automatically installs Reshape and adds it to your user PATH. **Restart your terminal** after installation.
+
 #### Linux / macOS (Bash)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.sh | bash
 ```
+
+Follow the on-screen instructions to add Reshape to your PATH.
+
+> **Note:** Having issues with PATH? See [PATH Setup Guide](docs/PATH_SETUP.md) for troubleshooting.
 
 ### Install Specific Version
 
