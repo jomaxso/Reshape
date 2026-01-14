@@ -377,8 +377,8 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
 
                 // Install the downloaded binary
                 var exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                    ? "Reshape.Cli.exe"
-                    : "Reshape.Cli";
+                    ? "reshape.exe"
+                    : "reshape";
 
                 var newExePath = Directory.GetFiles(tempDir, exeName, SearchOption.AllDirectories).FirstOrDefault();
                 if (newExePath == null)
@@ -641,8 +641,8 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
 
             // Find the new executable
             var exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? "Reshape.Cli.exe"
-                : "Reshape.Cli";
+                ? "reshape.exe"
+                : "reshape";
 
             var newExePath = Directory.GetFiles(extractDir, exeName, SearchOption.AllDirectories).FirstOrDefault();
             if (newExePath == null)
