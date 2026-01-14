@@ -64,13 +64,13 @@ jobs:
             **⚠️ WARNING: Do not do this without first carefully reviewing the code of this PR to satisfy yourself it is safe.**
 
             \`\`\`bash
-            curl -fsSL https://raw.githubusercontent.com/${repo}/main/scripts/get-reshape-pr.sh | bash -s -- ${prNumber}
+            curl -fsSL https://raw.githubusercontent.com/${repo}/main/eng/scripts/get-reshape-pr.sh | bash -s -- ${prNumber}
             \`\`\`
             Or
 
             Run remotely in PowerShell:
             \`\`\`powershell
-            iex "& { $(irm https://raw.githubusercontent.com/${repo}/main/scripts/get-reshape-pr.ps1) } ${prNumber}"
+            iex "& { $(irm https://raw.githubusercontent.com/${repo}/main/eng/scripts/get-reshape-pr.ps1) } ${prNumber}"
             \`\`\`
 
             <!-- pr-install-instructions -->

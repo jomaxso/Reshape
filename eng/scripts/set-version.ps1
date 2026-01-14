@@ -54,7 +54,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$VersionsPropsPath = Join-Path $PSScriptRoot ".." "eng" "Versions.props"
+$VersionsPropsPath = Join-Path $PSScriptRoot ".." "Versions.props"
 
 if (-not (Test-Path $VersionsPropsPath)) {
     Write-Error "eng/Versions.props not found at: $VersionsPropsPath"

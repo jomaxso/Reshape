@@ -1,116 +1,116 @@
 name: Create Stable Release
 
 on:
-    workflow_dispatch:
-        inputs:
-            version:
-                description: "Release version (leave empty to use version from .csproj)"
-                required: false
-                type: string
-            prerelease:
-                description: "Mark as prerelease"
-                required: false
-                type: boolean
-                default: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (leave empty to use version from .csproj)"
+        required: false
+        type: string
+      prerelease:
+        description: "Mark as prerelease"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
-    contents: write
+  contents: write
 
 jobs:
-    release:
-        runs-on: ubuntu-latest
+  release:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  ref: main
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
 
-            - name: Get Version
-              id: version
-              run: |
-                  if [ -n "${{ github.event.inputs.version }}" ]; then
-                    VERSION="${{ github.event.inputs.version }}"
-                    echo "Using manual version: ${VERSION}"
-                  else
-                    # Read version from eng/Versions.props
-                    MAJOR=$(grep -oP '<MajorVersion>\K[^<]+' eng/Versions.props)
-                    MINOR=$(grep -oP '<MinorVersion>\K[^<]+' eng/Versions.props)
-                    PATCH=$(grep -oP '<PatchVersion>\K[^<]+' eng/Versions.props)
-                    PRERELEASE=$(grep -oP '<PreReleaseVersionLabel>\K[^<]+' eng/Versions.props)
-                    
-                    VERSION="${MAJOR}.${MINOR}.${PATCH}"
-                    if [ -n "$PRERELEASE" ]; then
-                      VERSION="${VERSION}-${PRERELEASE}"
-                    fi
-                    
-                    echo "Using version from eng/Versions.props: ${VERSION}"
-                  fi
+      - name: Get Version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            echo "Using manual version: ${VERSION}"
+          else
+            # Read version from eng/Versions.props
+            MAJOR=$(grep -oP '<MajorVersion>\K[^<]+' eng/Versions.props)
+            MINOR=$(grep -oP '<MinorVersion>\K[^<]+' eng/Versions.props)
+            PATCH=$(grep -oP '<PatchVersion>\K[^<]+' eng/Versions.props)
+            PRERELEASE=$(grep -oP '<PreReleaseVersionLabel>\K[^<]+' eng/Versions.props)
+            
+            VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            if [ -n "$PRERELEASE" ]; then
+              VERSION="${VERSION}-${PRERELEASE}"
+            fi
+            
+            echo "Using version from eng/Versions.props: ${VERSION}"
+          fi
 
-                  echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-                  # Check if tag already exists
-                  if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
-                    echo "::error::Tag v${VERSION} already exists!"
-                    exit 1
-                  fi
+          # Check if tag already exists
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "::error::Tag v${VERSION} already exists!"
+            exit 1
+          fi
 
-            - name: Create Release Tag
-              run: |
-                  VERSION="${{ steps.version.outputs.version }}"
+      - name: Create Release Tag
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
 
-                  git config user.name "github-actions[bot]"
-                  git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-                  # Create and push tag
-                  git tag -a "v${VERSION}" -m "Release v${VERSION}"
-                  git push origin "v${VERSION}"
+          # Create and push tag
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
 
-                  echo "Created and pushed tag v${VERSION}"
+          echo "Created and pushed tag v${VERSION}"
 
-            - name: Wait for Tag Push
-              run: sleep 5
+      - name: Wait for Tag Push
+        run: sleep 5
 
-            - name: Create GitHub Release
-              uses: softprops/action-gh-release@v1
-              with:
-                  tag_name: v${{ steps.version.outputs.version }}
-                  name: v${{ steps.version.outputs.version }}
-                  body: |
-                      # Release v${{ steps.version.outputs.version }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          body: |
+            # Release v${{ steps.version.outputs.version }}
 
-                      ```bash
-                      curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.sh | bash
-                      ```
-                      Or
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.sh | bash
+            ```
+            Or
 
-                      Run remotely in PowerShell:
-                      ```powershell
-                      iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.ps1) }"
-                      ```
+            Run remotely in PowerShell:
+            ```powershell
+            iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.ps1) }"
+            ```
 
-                      Or download the binaries manually below.
+            Or download the binaries manually below.
 
-                      ## What's Changed
+            ## What's Changed
 
-                      _Release notes will be generated automatically._
+            _Release notes will be generated automatically._
 
-                      ---
+            ---
 
-                      **Full Changelog**: https://github.com/${{ github.repository }}/commits/v${{ steps.version.outputs.version }}
-                  draft: false
-                  prerelease: ${{ github.event.inputs.prerelease == 'true' }}
-                  generate_release_notes: true
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            **Full Changelog**: https://github.com/${{ github.repository }}/commits/v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Summary
-              run: |
-                  echo "## ✅ Release Created" >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-                  echo "**Version:** v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-                  echo "**Prerelease:** ${{ github.event.inputs.prerelease }}" >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-                  echo "The build-and-release workflow will automatically build and upload binaries." >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-                  echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+      - name: Summary
+        run: |
+          echo "## ✅ Release Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Prerelease:** ${{ github.event.inputs.prerelease }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The build-and-release workflow will automatically build and upload binaries." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }})" >> $GITHUB_STEP_SUMMARY

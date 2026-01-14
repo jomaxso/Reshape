@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 # Reshape CLI Installation Script for Windows/PowerShell
-# Usage: iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.ps1) }"
-# Or with version: iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.ps1) } -Version v0.1.0"
+# Usage: iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) }"
+# Or with version: iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) } -Version v0.1.0"
 
 param(
     [string]$Version = "latest",

@@ -14,7 +14,7 @@
   <PropertyGroup>
     <!-- Repository and company information -->
     <Authors>jomaxso</Authors>
-    <Company>Reshape</Company>
+    <Company>jomaxso</Company>
     <Product>Reshape CLI</Product>
     <Copyright>Copyright © $(Company) $([System.DateTime]::Now.Year)</Copyright>
     <RepositoryUrl>https://github.com/jomaxso/Reshape</RepositoryUrl>

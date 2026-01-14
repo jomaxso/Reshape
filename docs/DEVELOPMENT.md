@@ -22,14 +22,14 @@ This guide covers everything you need to know to contribute to Reshape.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/jomaxso/TypeScript.git
-cd TypeScript
+git clone https://github.com/jomaxso/Reshape.git
+cd Reshape
 ```
 
 ### 2. Build the CLI
 
 ```bash
-cd reshape-cli
+cd src/reshape-cli
 dotnet restore
 dotnet build
 ```
@@ -37,7 +37,7 @@ dotnet build
 ### 3. Build the Vue UI
 
 ```bash
-cd reshape-ui
+cd src/reshape-ui
 npm install
 npm run build
 ```
@@ -45,7 +45,7 @@ npm run build
 ### 4. Run the Application
 
 ```bash
-cd reshape-cli
+cd src/reshape-cli
 dotnet run -- serve
 ```
 
@@ -58,21 +58,22 @@ Open `http://localhost:5000` in your browser.
 ### Overview
 
 ```
-TypeScript/
-├── reshape-cli/           # .NET Backend + CLI
-│   ├── Commands/          # Command handlers
-│   ├── Utilities/         # Helper classes
-│   ├── wwwroot/           # Compiled Vue app
-│   ├── Program.cs         # CLI entry point
-│   ├── FileService.cs     # Core business logic
-│   ├── Models.cs          # Data models
-│   └── AppJsonSerializerContext.cs  # AOT JSON config
-│
-└── reshape-ui/            # Vue 3 Frontend
-    └── src/
-        ├── components/    # Vue components
-        ├── api.ts         # API client
-        └── types.ts       # TypeScript types
+Reshape/
+├── src/
+│   ├── reshape-cli/           # .NET Backend + CLI
+│   │   ├── Commands/          # Command handlers
+│   │   ├── Utilities/         # Helper classes
+│   │   ├── wwwroot/           # Compiled Vue app
+│   │   ├── Program.cs         # CLI entry point
+│   │   ├── FileService.cs     # Core business logic
+│   │   ├── Models.cs          # Data models
+│   │   └── AppJsonSerializerContext.cs  # AOT JSON config
+│   │
+│   └── reshape-ui/            # Vue 3 Frontend
+│       └── src/
+│           ├── components/    # Vue components
+│           ├── api.ts         # API client
+│           └── types.ts       # TypeScript types
 ```
 
 ### Key Design Decisions
@@ -136,7 +137,7 @@ npm run dev
 
 ### Adding a New CLI Command
 
-1. **Create the handler** in `reshape-cli/Commands/`:
+1. **Create the handler** in `src/reshape-cli/Commands/`:
 
 ```csharp
 namespace Reshape.Cli.Commands;
@@ -213,7 +214,7 @@ internal record MyResponse(string Result);
 internal partial class AppJsonSerializerContext : JsonSerializerContext;
 ```
 
-4. **Add TypeScript types** in `reshape-ui/src/types.ts`:
+4. **Add TypeScript types** in `src/reshape-ui/src/types.ts`:
 
 ```typescript
 export interface MyRequest {
@@ -225,7 +226,7 @@ export interface MyResponse {
 }
 ```
 
-5. **Add API method** in `reshape-ui/src/api.ts`:
+5. **Add API method** in `src/reshape-ui/src/api.ts`:
 
 ```typescript
 async myEndpoint(param: string): Promise<MyResponse> {
@@ -414,9 +415,9 @@ npm run build
             "name": "Debug CLI",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/reshape-cli/bin/Debug/net10.0/Reshape.Cli.dll",
+            "program": "${workspaceFolder}/src/reshape-cli/bin/Debug/net10.0/Reshape.Cli.dll",
             "args": ["serve"],
-            "cwd": "${workspaceFolder}/reshape-cli"
+            "cwd": "${workspaceFolder}/src/reshape-cli"
         }
     ]
 }

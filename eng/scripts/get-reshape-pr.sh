@@ -3,7 +3,7 @@
 # Install Reshape CLI from a specific Pull Request build.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/get-reshape-pr.sh | bash -s -- 9
+#   curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/get-reshape-pr.sh | bash -s -- 9
 #
 # Or download and run:
 #   ./get-reshape-pr.sh 9
@@ -61,7 +61,7 @@ print_usage() {
     echo "Usage: $0 <pr-number>"
     echo ""
     echo "Example:"
-    echo "  curl -fsSL https://raw.githubusercontent.com/$REPO/main/scripts/get-reshape-pr.sh | bash -s -- 9"
+    echo "  curl -fsSL https://raw.githubusercontent.com/$REPO/main/eng/scripts/get-reshape-pr.sh | bash -s -- 9"
     echo ""
 }
 

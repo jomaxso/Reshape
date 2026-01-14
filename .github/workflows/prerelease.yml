@@ -70,13 +70,13 @@ jobs:
                       **⚠️ This is a prerelease build from the main branch. Not recommended for production use.**
 
                       ```bash
-                      curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.sh | bash -s -- --prerelease
+                      curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.sh | bash -s -- --prerelease
                       ```
                       Or
 
                       Run remotely in PowerShell:
                       ```powershell
-                      iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.ps1) } -Prerelease"
+                      iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.ps1) } -Prerelease"
                       ```
 
                       ---
