@@ -8,9 +8,6 @@
     <PublishAot>true</PublishAot>
     <PackAsTool>true</PackAsTool>
     <UserSecretsId>reshape-cli-b7a76149d97192ff3b537c52b277d8325b66e5f8ce14eb6531e4e7fcdbf5fd9b</UserSecretsId>
-    <Version>0.1.0</Version>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +15,10 @@
     <PackageReference Include="Spectre.Console" Version="0.54.0" />
     <PackageReference Include="MetadataExtractor" Version="2.8.1" />
     <PackageReference Include="TimeZoneConverter" Version="7.2.0" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.9.50">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
