@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
-using System.Net.Http.Json;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
@@ -14,16 +13,9 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class UpdateCommand : AsynchronousCommandLineAction
 {
-    public static readonly Option<bool> StableOption = new("--stable")
+    public static readonly Option<bool> PreviewOption = new("--preview")
     {
-        Description = "Use only stable versions (default)",
-        Arity = ArgumentArity.Zero
-    };
-
-
-    public static readonly Option<bool> PrereleaseOption = new("--prerelease")
-    {
-        Description = "Include prerelease versions",
+        Description = "Include preview versions",
         Arity = ArgumentArity.Zero
     };
 
@@ -49,16 +41,15 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
     {
         var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
         var checkOnly = parseResult.GetValue(CheckOption);
-        var stable = parseResult.GetValue(StableOption);
-        var includePrerelease = parseResult.GetValue(PrereleaseOption);
+        var includePreview = parseResult.GetValue(PreviewOption);
         var specificVersion = parseResult.GetValue(VersionOption);
         var prNumber = parseResult.GetValue(PrOption);
 
         // Validate mutually exclusive options
-        var optionsCount = new[] { stable, includePrerelease, specificVersion != null, prNumber != null }.Count(x => x);
+        var optionsCount = new[] { includePreview, specificVersion != null, prNumber != null }.Count(x => x);
         if (optionsCount > 1)
         {
-            AnsiConsole.MarkupLine("[red]Error: Cannot specify multiple update options (--stable, --prerelease, --version, --pr).[/]");
+            AnsiConsole.MarkupLine("[red]Error: Cannot specify multiple update options (--preview, --version, --pr).[/]");
             return 1;
         }
 
@@ -75,7 +66,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
         }
 
         // Interactive mode
-        if (!noInteractive && !stable && !includePrerelease)
+        if (!noInteractive && !includePreview)
         {
             var choice = await AnsiConsole.PromptAsync(new SelectionPrompt<string>()
                     .Title("[cyan]What would you like to install?[/]")
@@ -89,10 +80,10 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             switch (choice)
             {
                 case "Latest stable":
-                    stable = true;
+                    includePreview = false;
                     break;
                 case "Latest preview":
-                    includePrerelease = true;
+                    includePreview = true;
                     break;
                 case "Pull request":
                     // Fetch and display list of open PRs
@@ -114,9 +105,9 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                     return await InstallPullRequest(selectedPrNumber, cancellationToken);
             }
         }
-        else if (noInteractive && !stable && !includePrerelease)
+        else if (noInteractive && !includePreview)
         {
-            AnsiConsole.MarkupLine("[red]Error: When running in non-interactive mode, you must specify --stable, --prerelease, --version, or --pr.[/]");
+            AnsiConsole.MarkupLine("[red]Error: When running in non-interactive mode, you must specify --preview, --version, or --pr.[/]");
             return 1;
         }
 
@@ -133,7 +124,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                 .Spinner(Spinner.Known.Dots)
                 .StartAsync("Checking for updates...", async ctx =>
                 {
-                    return await CheckForUpdates(includePrerelease, cancellationToken);
+                    return await CheckForUpdates(includePreview, cancellationToken);
                 });
 
             var release = releases.FirstOrDefault();
