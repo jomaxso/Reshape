@@ -47,8 +47,11 @@ The Vue UI is built once and reused for all platform builds.
 #### 2. Build CLI (per platform)
 
 ```yaml
-- Checkout code
+- Checkout code (with full git history)
 - Setup .NET 10
+- Install Nerdbank.GitVersioning tool
+- Set PR build variables (for pull requests)
+- Get version information
 - Download UI artifact
 - Restore dependencies
 - Publish with AOT compilation
@@ -59,6 +62,7 @@ The Vue UI is built once and reused for all platform builds.
 
 Each platform build:
 - Uses Native AOT compilation for fast startup
+- Uses Nerdbank.GitVersioning for automatic version stamping
 - Creates a self-contained executable
 - Generates SHA256 checksum for verification
 
@@ -167,42 +171,178 @@ On Unix systems:
 3. Sets executable permissions
 4. Update completes immediately
 
-## Creating a Release
+## Workflow Monitoring
 
-### Prerequisites
+Reshape uses [Nerdbank.GitVersioning](https://github.com/dotnet/Nerdbank.GitVersioning) for automated semantic versioning. The version is automatically derived from git history and follows [Semantic Versioning 2.0](https://semver.org/).
 
-1. Update version in `reshape-cli/Reshape.Cli.csproj`:
-   ```xml
-   <Version>X.Y.Z</Version>
+#### Version Format
+
+**Stable Releases (from main or version tags):**
+```
+MAJOR.MINOR.PATCH
+```
+
+**Preview/PR Builds:**
+```
+MAJOR.MINOR.PATCH-preview.{height}+{commit-id}
+```
+
+Where:
+- **MAJOR.MINOR.PATCH**: Base version from `version.json`
+- **preview**: Prerelease tag for non-public builds
+- **{height}**: Number of commits since the last version change
+- **{commit-id}**: Short git commit hash
+
+#### Configuration
+
+Versioning is configured in `/version.json`:
+
+```json
+{
+  "version": "0.1",
+  "publicReleaseRefSpec": [
+    "^refs/heads/main$",
+    "^refs/tags/v\\d+\\.\\d+\\.\\d+$"
+  ],
+  "release": {
+    "firstUnstableTag": "preview"
+  }
+}
+```
+
+**Public Releases** (no preview tag):
+- Commits on the `main` branch
+- Version tags matching `vX.Y.Z` pattern
+
+**Preview Releases** (with preview tag):
+- Pull request builds
+- Feature branch builds
+- Any commit not matching `publicReleaseRefSpec`
+
+#### How Versioning Works
+
+1. **Git-Based Calculation**: Nerdbank.GitVersioning analyzes git history to calculate the version
+2. **Automatic Application**: Version is automatically applied during build (no manual version updates needed in `.csproj`)
+3. **Build Metadata**: Non-public releases include git commit hash as build metadata
+4. **Height Calculation**: The height value increments with each commit, providing a unique version for every build
+
+#### Updating Version
+
+To change the base version (e.g., from 0.1 to 0.2):
+
+1. Edit `version.json`:
+   ```json
+   {
+     "version": "0.2",
+     ...
+   }
    ```
 
-2. Commit all changes
-
-3. Create and push a version tag:
+2. Commit the change:
    ```bash
-   git tag -a vX.Y.Z -m "Release version X.Y.Z"
-   git push origin vX.Y.Z
+   git add version.json
+   git commit -m "Bump version to 0.2"
+   git push
    ```
 
-### Versioning Scheme
+The version is automatically applied to all subsequent builds.
 
-Follow [Semantic Versioning](https://semver.org/):
+#### CI/CD Integration
 
-- **Major** (X.0.0): Breaking changes
+GitHub Actions workflows automatically use Nerdbank.GitVersioning:
+
+```yaml
+- name: Install Nerdbank.GitVersioning
+  run: dotnet tool install -g nbgv
+
+- name: Get version
+  id: nbgv
+  run: |
+    VERSION=$(nbgv get-version -v Version)
+    echo "version=${VERSION}" >> $GITHUB_OUTPUT
+```
+
+For PR builds, the workflow includes additional steps to track PR numbers in build logs.
+
+### Semantic Versioning Guidelines
+
+Follow these guidelines when bumping versions:
+
+- **Major** (X.0.0): Breaking changes, incompatible API changes
 - **Minor** (0.X.0): New features, backward compatible
-- **Patch** (0.0.X): Bug fixes, backward compatible
+- **Patch** (0.0.X): Bug fixes, backward compatible (handled automatically by git height)
 
 ### Prerelease Versions
 
-For prerelease versions, use suffixes:
+For alpha/beta releases, use the version field in `version.json`:
 
-- Alpha: `v0.1.0-alpha.1`
-- Beta: `v0.1.0-beta.1`
-- Release Candidate: `v0.1.0-rc.1`
+```json
+{
+  "version": "1.0-alpha",
+  ...
+}
+```
 
-Prereleases are automatically marked as such in GitHub Releases.
+or
 
-## Workflow Monitoring
+```json
+{
+  "version": "1.0-beta",
+  ...
+}
+```
+
+This will generate versions like:
+- `1.0.0-alpha.5+abc1234` (on feature branches)
+- `1.0.0-alpha.5` (on main)
+
+## Creating a Release
+
+### Automated Release Process
+
+1. **Update version** (if needed) in `version.json`
+
+2. **Commit all changes** to main:
+   ```bash
+   git add .
+   git commit -m "Release preparation"
+   git push origin main
+   ```
+
+3. **Use the GitHub Release Workflow**:
+   - Go to Actions → "Create Stable Release"
+   - Click "Run workflow"
+   - Enter version (or leave empty to use version from nbgv)
+   - Click "Run workflow"
+
+The workflow will:
+- Calculate or use the specified version
+- Create a git tag
+- Trigger the build-and-release workflow
+- Build binaries for all platforms
+- Create a GitHub release with artifacts
+
+### Manual Release Creation
+
+Alternatively, create and push a version tag:
+
+```bash
+# Get current version
+nbgv get-version
+
+# Create tag
+git tag -a v0.1.0 -m "Release version 0.1.0"
+git push origin v0.1.0
+```
+
+### Prerelease Workflow
+
+The prerelease workflow automatically runs on every push to `main`:
+
+- Creates a rolling "prerelease" tag
+- Builds and uploads binaries
+- Marks as prerelease in GitHub
+- Accessible via `--prerelease` flag in install scripts
 
 ### View Workflow Runs
 
