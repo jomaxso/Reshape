@@ -1,7 +1,5 @@
-
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using Reshape.Cli.Commands;
 using Reshape.Cli.Commands.Patterns;
 using Spectre.Console;
 
@@ -36,7 +34,8 @@ internal sealed class ReshapeCliCommand : AsynchronousCommandLineAction
                 .AddChoices(
                     "🌐 Run - Start Web UI",
                      "📁 File - Manage Files",
-                    "🎨 Pattern - Manage Patterns"
+                    "🎨 Pattern - Manage Patterns",
+                    "⬆️ Update - Check for Updates"
                 ));
 
         AsynchronousCommandLineAction? command = commandString switch
@@ -44,6 +43,7 @@ internal sealed class ReshapeCliCommand : AsynchronousCommandLineAction
             "🌐 Run - Start Web UI" => new RunCommand(),
             "📁 File - Manage Files" => new FileCommand(),
             "🎨 Pattern - Manage Patterns" => new PatternCommand(),
+            "⬆️ Update - Check for Updates" => new UpdateCommand(),
             _ => null
         };
 

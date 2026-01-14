@@ -17,7 +17,7 @@ internal sealed class PatternCommand : AsynchronousCommandLineAction
 
         if (noInteractive)
         {
-            AnsiConsole.MarkupLine("[yellow]Usage:[/] pattern [[list|add|remove]]");
+            AnsiConsole.MarkupLine("[yellow]Usage:[/] pattern [[list|set|remove]]");
             return 0;
         }
 
@@ -28,14 +28,14 @@ internal sealed class PatternCommand : AsynchronousCommandLineAction
             var action = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .Title("What would you like to do?")
-                    .AddChoices("List patterns", "Add pattern", "Remove pattern(s)")
+                    .AddChoices("List patterns", "Set pattern", "Remove pattern(s)")
                     .HighlightStyle(new Style(Color.Cyan1))
             );
 
             return action switch
             {
                 "List patterns" => List(),
-                "Add pattern" => InteractiveAdd(),
+                "Set pattern" => InteractiveSet(),
                 "Remove pattern(s)" => InteractiveRemove(),
                 _ => 0
             };
@@ -47,9 +47,9 @@ internal sealed class PatternCommand : AsynchronousCommandLineAction
         }
     }
 
-    public static Command BuildAddCommand()
+    public static Command BuildSetCommand()
     {
-        var command = new Command("add", "Add a new custom pattern");
+        var command = new Command("set", "Set the new custom pattern");
 
         var patternArg = new Argument<string?>("pattern")
         {
@@ -105,11 +105,11 @@ internal sealed class PatternCommand : AsynchronousCommandLineAction
         return command;
     }
 
-    private static int InteractiveAdd(string? defaultPattern = null, string? defaultDescription = null)
+    private static int InteractiveSet(string? defaultPattern = null, string? defaultDescription = null)
     {
         DisplayPlaceholderInfo();
 
-        AnsiConsole.MarkupLine("Add a new custom pattern:");
+        AnsiConsole.MarkupLine("Set a new custom pattern:");
         AnsiConsole.WriteLine();
 
         var patternPrompt = new TextPrompt<string>("[cyan]Pattern:[/]")
@@ -222,7 +222,7 @@ internal sealed class PatternCommand : AsynchronousCommandLineAction
         // If arguments are missing, use interactive mode with defaults
         if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(description))
         {
-            return InteractiveAdd(pattern, description);
+            return InteractiveSet(pattern, description);
         }
 
         try
