@@ -40,10 +40,15 @@ jobs:
                       <!-- pr-welcome-message -->
                       `;
 
-                      await github.rest.issues.createComment({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: prNumber,
-                        body: body
-                      });
-                      console.log('Welcome message posted');
+                      try {
+                        await github.rest.issues.createComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: prNumber,
+                          body: body
+                        });
+                        console.log('Welcome message posted successfully');
+                      } catch (error) {
+                        console.error('Failed to post welcome message:', error);
+                        throw error;
+                      }
