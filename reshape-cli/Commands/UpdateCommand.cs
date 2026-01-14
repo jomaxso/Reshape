@@ -14,6 +14,13 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class UpdateCommand : AsynchronousCommandLineAction
 {
+    public static readonly Option<bool> StableOption = new("--stable")
+    {
+        Description = "Use only stable versions (default)",
+        Arity = ArgumentArity.Zero
+    };
+
+
     public static readonly Option<bool> PrereleaseOption = new("--prerelease")
     {
         Description = "Include prerelease versions",
@@ -28,8 +35,38 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
 
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
-        var includePrerelease = parseResult.GetValue(PrereleaseOption);
+        var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
+
         var checkOnly = parseResult.GetValue(CheckOption);
+
+        var stable = parseResult.GetValue(StableOption);
+        var includePrerelease = parseResult.GetValue(PrereleaseOption);
+
+        if (stable && includePrerelease)
+        {
+            AnsiConsole.MarkupLine("[red]Error: Cannot specify both --stable and --prerelease options.[/]");
+            return 1;
+        }
+
+        if (noInteractive && !stable && !includePrerelease)
+        {
+            AnsiConsole.MarkupLine("[red]Error: When running in non-interactive mode, you must specify either --stable or --prerelease option.[/]");
+            return 1;
+        }
+
+        if (!noInteractive && !stable && !includePrerelease)
+        {
+            var version = await AnsiConsole.PromptAsync(new SelectionPrompt<string>()
+                    .Title("Update options:")
+                    .AddChoices(
+                    [
+                        "stable",
+                    "prerelease"
+                    ]), cancellationToken);
+
+            stable = version == "stable";
+            includePrerelease = version == "prerelease";
+        }
 
         try
         {
@@ -40,12 +77,14 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             AnsiConsole.MarkupLine($"[dim]Current version: [cyan]{currentVersion}[/][/]");
 
             // Check for updates
-            var release = await AnsiConsole.Status()
+            var releases = await AnsiConsole.Status()
                 .Spinner(Spinner.Known.Dots)
                 .StartAsync("Checking for updates...", async ctx =>
                 {
                     return await CheckForUpdates(includePrerelease, cancellationToken);
                 });
+
+            var release = releases.FirstOrDefault();
 
             if (release == null)
             {
@@ -68,6 +107,16 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                 {
                     AnsiConsole.MarkupLine("\n[cyan]Run 'reshape update' to install the new version[/]");
                     return 0;
+                }
+
+                if (checkOnly == false && !noInteractive)
+                {
+                    // prompt for confirmation
+                    if (!AnsiConsole.Confirm($"\nDo you want to update to {release.TagName}?", defaultValue: true))
+                    {
+                        AnsiConsole.MarkupLine("[yellow]Update cancelled[/]");
+                        return 0;
+                    }
                 }
 
                 // Confirm update
@@ -116,7 +165,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
         return version;
     }
 
-    private static async Task<GitHubRelease?> CheckForUpdates(bool includePrerelease, CancellationToken cancellationToken)
+    private static async Task<GitHubRelease[]> CheckForUpdates(bool includePrerelease, CancellationToken cancellationToken)
     {
         const string repo = "jomaxso/Reshape";
         using var client = new HttpClient();
@@ -127,12 +176,14 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             if (includePrerelease)
             {
                 // Get all releases and find the latest (including prereleases)
-                var releases = await client.GetFromJsonAsync<GitHubRelease[]>(
+                var releases = await client.GetFromJsonAsync(
                     $"https://api.github.com/repos/{repo}/releases",
                     AppJsonSerializerContext.Default.GitHubReleaseArray,
                     cancellationToken);
 
-                return releases?.FirstOrDefault();
+                return releases?
+                    .OrderByDescending(r => r.TagName)
+                    .ToArray() ?? [];
             }
             else
             {
@@ -142,12 +193,12 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                     AppJsonSerializerContext.Default.GitHubRelease,
                     cancellationToken);
 
-                return release;
+                return release != null ? [release] : [];
             }
         }
         catch (HttpRequestException)
         {
-            return null;
+            return [];
         }
     }
 
