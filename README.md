@@ -74,6 +74,31 @@ Download the latest release for your platform from the [Releases page](https://g
 
 Extract the archive and add the executable to your PATH.
 
+## 🔢 Versioning
+
+Reshape uses automated semantic versioning with [Nerdbank.GitVersioning](https://github.com/dotnet/Nerdbank.GitVersioning).
+
+### Version Format
+
+- **Stable releases** (from main): `X.Y.Z` (e.g., `0.1.0`)
+- **Preview builds** (PRs, feature branches): `X.Y.Z-preview.N+commit` (e.g., `0.1.0-preview.5+abc1234`)
+
+Where:
+- `X.Y.Z` = Base version (MAJOR.MINOR.PATCH)
+- `preview` = Prerelease tag for non-stable builds
+- `N` = Number of commits since last version change
+- `commit` = Short git commit hash
+
+### Check Your Version
+
+```bash
+reshape --version
+```
+
+The version is automatically calculated from git history and applied during build. No manual version updates required in source files!
+
+📖 See [docs/CICD.md](docs/CICD.md) for details on the versioning workflow and release process.
+
 ### Build from Source
 
 #### Prerequisites
