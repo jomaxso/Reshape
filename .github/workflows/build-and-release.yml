@@ -88,14 +88,22 @@ jobs:
       - name: Install Nerdbank.GitVersioning
         run: dotnet tool install -g nbgv
 
-      - name: Set version for PR builds
+      - name: Set PR build variables
         if: github.event_name == 'pull_request'
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          echo "NBGV_PublicRelease=false" >> $GITHUB_ENV
-          echo "NBGV_ContinuousIntegrationBuild=true" >> $GITHUB_ENV
-          echo "BUILD_METADATA=pr$PR_NUMBER" >> $GITHUB_ENV
+          nbgv cloud -a -c
+          echo "Building PR #${PR_NUMBER}"
         shell: bash
+
+      - name: Get version
+        id: nbgv
+        run: |
+          VERSION=$(nbgv get-version -v Version)
+          ASSEMBLY_VERSION=$(nbgv get-version -v AssemblyVersion)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "assembly_version=${ASSEMBLY_VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${VERSION}"
 
       - name: Download UI artifact
         uses: actions/download-artifact@v4.1.3
