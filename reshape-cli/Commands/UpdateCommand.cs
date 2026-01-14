@@ -33,39 +33,91 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
         Arity = ArgumentArity.Zero
     };
 
+    public static readonly Option<string?> VersionOption = new("--version")
+    {
+        Description = "Install a specific version (e.g., 1.0.0)",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    public static readonly Option<int?> PrOption = new("--pr")
+    {
+        Description = "Install a specific pull request build (e.g., 11)",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
     public override async Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
         var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
-
         var checkOnly = parseResult.GetValue(CheckOption);
-
         var stable = parseResult.GetValue(StableOption);
         var includePrerelease = parseResult.GetValue(PrereleaseOption);
+        var specificVersion = parseResult.GetValue(VersionOption);
+        var prNumber = parseResult.GetValue(PrOption);
 
-        if (stable && includePrerelease)
+        // Validate mutually exclusive options
+        var optionsCount = new[] { stable, includePrerelease, specificVersion != null, prNumber != null }.Count(x => x);
+        if (optionsCount > 1)
         {
-            AnsiConsole.MarkupLine("[red]Error: Cannot specify both --stable and --prerelease options.[/]");
+            AnsiConsole.MarkupLine("[red]Error: Cannot specify multiple update options (--stable, --prerelease, --version, --pr).[/]");
             return 1;
         }
 
-        if (noInteractive && !stable && !includePrerelease)
+        // Handle --pr option
+        if (prNumber.HasValue)
         {
-            AnsiConsole.MarkupLine("[red]Error: When running in non-interactive mode, you must specify either --stable or --prerelease option.[/]");
-            return 1;
+            return await InstallPullRequest(prNumber.Value, cancellationToken);
         }
 
+        // Handle --version option
+        if (specificVersion != null)
+        {
+            return await InstallSpecificVersion(specificVersion, cancellationToken);
+        }
+
+        // Interactive mode
         if (!noInteractive && !stable && !includePrerelease)
         {
-            var version = await AnsiConsole.PromptAsync(new SelectionPrompt<string>()
-                    .Title("Update options:")
+            var choice = await AnsiConsole.PromptAsync(new SelectionPrompt<string>()
+                    .Title("[cyan]What would you like to install?[/]")
                     .AddChoices(
                     [
-                        "stable",
-                    "prerelease"
+                        "Latest stable",
+                        "Latest preview",
+                        "Pull request"
                     ]), cancellationToken);
 
-            stable = version == "stable";
-            includePrerelease = version == "prerelease";
+            switch (choice)
+            {
+                case "Latest stable":
+                    stable = true;
+                    break;
+                case "Latest preview":
+                    includePrerelease = true;
+                    break;
+                case "Pull request":
+                    // Fetch and display list of open PRs
+                    var openPrs = await FetchOpenPullRequests(cancellationToken);
+                    if (openPrs == null || openPrs.Length == 0)
+                    {
+                        AnsiConsole.MarkupLine("[yellow]No open pull requests found.[/]");
+                        return 1;
+                    }
+
+                    var prChoices = openPrs.Select(pr => $"#{pr.Number}: {pr.Title}").ToArray();
+                    var selectedPr = AnsiConsole.Prompt(
+                        new SelectionPrompt<string>()
+                            .Title("[cyan]Select a pull request:[/]")
+                            .PageSize(10)
+                            .AddChoices(prChoices));
+
+                    var selectedPrNumber = int.Parse(selectedPr.Split(':')[0].TrimStart('#'));
+                    return await InstallPullRequest(selectedPrNumber, cancellationToken);
+            }
+        }
+        else if (noInteractive && !stable && !includePrerelease)
+        {
+            AnsiConsole.MarkupLine("[red]Error: When running in non-interactive mode, you must specify --stable, --prerelease, --version, or --pr.[/]");
+            return 1;
         }
 
         try
@@ -144,6 +196,284 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
         {
             AnsiConsole.MarkupLine($"[red]Error during update: {Markup.Escape(ex.Message)}[/]");
             return 1;
+        }
+    }
+
+    private static async Task<int> InstallSpecificVersion(string version, CancellationToken cancellationToken)
+    {
+        try
+        {
+            AnsiConsole.Write(new Rule($"[cyan]Installing Reshape CLI v{version}[/]").LeftJustified());
+
+            const string repo = "jomaxso/Reshape";
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", "Reshape-CLI");
+
+            // Try to fetch the specific release
+            var tagName = version.StartsWith('v') ? version : $"v{version}";
+            var url = $"https://api.github.com/repos/{repo}/releases/tags/{tagName}";
+
+            var release = await AnsiConsole.Status()
+                .Spinner(Spinner.Known.Dots)
+                .StartAsync($"Fetching version {version}...", async ctx =>
+                {
+                    try
+                    {
+                        return await client.GetFromJsonAsync(
+                            url,
+                            AppJsonSerializerContext.Default.GitHubRelease,
+                            cancellationToken);
+                    }
+                    catch (HttpRequestException)
+                    {
+                        return null;
+                    }
+                });
+
+            if (release == null)
+            {
+                AnsiConsole.MarkupLine($"[red]Error: Version {version} not found.[/]");
+                AnsiConsole.MarkupLine("[dim]Use 'reshape update' without options to see available versions.[/]");
+                return 1;
+            }
+
+            AnsiConsole.MarkupLine($"[green]✓ Found version: {release.TagName}[/]");
+            if (!string.IsNullOrEmpty(release.Name))
+            {
+                AnsiConsole.MarkupLine($"[dim]  {Markup.Escape(release.Name)}[/]");
+            }
+
+            await PerformUpdate(release, cancellationToken);
+            AnsiConsole.MarkupLine($"\n[green]✓ Successfully installed version {release.TagName}![/]");
+            AnsiConsole.MarkupLine("[dim]Run 'reshape --version' to verify[/]");
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error installing version: {Markup.Escape(ex.Message)}[/]");
+            return 1;
+        }
+    }
+
+    private static async Task<int> InstallPullRequest(int prNumber, CancellationToken cancellationToken)
+    {
+        try
+        {
+            AnsiConsole.Write(new Rule($"[cyan]Installing from Pull Request #{prNumber}[/]").LeftJustified());
+
+            const string repo = "jomaxso/Reshape";
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", "Reshape-CLI");
+            client.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
+
+            // Get PR information
+            var prInfo = await AnsiConsole.Status()
+                .Spinner(Spinner.Known.Dots)
+                .StartAsync($"Fetching PR #{prNumber} information...", async ctx =>
+                {
+                    try
+                    {
+                        var url = $"https://api.github.com/repos/{repo}/pulls/{prNumber}";
+                        return await client.GetFromJsonAsync(
+                            url,
+                            AppJsonSerializerContext.Default.GitHubPullRequest,
+                            cancellationToken);
+                    }
+                    catch (HttpRequestException)
+                    {
+                        return null;
+                    }
+                });
+
+            if (prInfo == null)
+            {
+                AnsiConsole.MarkupLine($"[red]Error: Pull request #{prNumber} not found.[/]");
+                return 1;
+            }
+
+            if (prInfo.State != "open")
+            {
+                AnsiConsole.MarkupLine($"[yellow]Warning: PR #{prNumber} is {prInfo.State}[/]");
+            }
+
+            AnsiConsole.MarkupLine($"[green]✓ Found PR: {Markup.Escape(prInfo.Title ?? $"#{prNumber}")}[/]");
+            AnsiConsole.MarkupLine($"[dim]  Head SHA: {prInfo.Head.Sha[..7]}[/]");
+
+            // Get workflow runs for this PR
+            var workflowRuns = await AnsiConsole.Status()
+                .Spinner(Spinner.Known.Dots)
+                .StartAsync("Finding build artifacts...", async ctx =>
+                {
+                    var url = $"https://api.github.com/repos/{repo}/actions/runs?event=pull_request&head_sha={prInfo.Head.Sha}";
+                    try
+                    {
+                        return await client.GetFromJsonAsync(
+                            url,
+                            AppJsonSerializerContext.Default.GitHubWorkflowRunsResponse,
+                            cancellationToken);
+                    }
+                    catch (HttpRequestException)
+                    {
+                        return null;
+                    }
+                });
+
+            var buildRun = workflowRuns?.WorkflowRuns
+                ?.Where(r => r.Name == "Build and Release" && r.Status == "completed" && r.Conclusion == "success")
+                .OrderByDescending(r => r.CreatedAt)
+                .FirstOrDefault();
+
+            if (buildRun == null)
+            {
+                AnsiConsole.MarkupLine("[red]Error: No successful build found for this PR.[/]");
+                AnsiConsole.MarkupLine("[dim]Make sure the PR has a completed 'Build and Release' workflow run.[/]");
+                return 1;
+            }
+
+            AnsiConsole.MarkupLine($"[green]✓ Found build from {buildRun.CreatedAt:g}[/]");
+
+            // Check if GitHub CLI is available for artifact download
+            if (!IsGitHubCliAvailable())
+            {
+                AnsiConsole.MarkupLine("\n[yellow]GitHub CLI (gh) is required to download PR artifacts.[/]");
+                AnsiConsole.MarkupLine("[dim]Install from: https://cli.github.com/[/]");
+                AnsiConsole.MarkupLine("[dim]Then authenticate with: gh auth login[/]");
+                return 1;
+            }
+
+            // Download artifact using gh CLI
+            var assetName = GetAssetNameForPlatform().Replace(".zip", "").Replace(".tar.gz", "");
+            var tempDir = Path.Combine(Path.GetTempPath(), $"reshape-pr-{prNumber}-{Guid.NewGuid()}");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                await AnsiConsole.Status()
+                    .Spinner(Spinner.Known.Dots)
+                    .StartAsync($"Downloading {assetName}...", async ctx =>
+                    {
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = "gh",
+                            Arguments = $"run download {buildRun.Id} --name {assetName} --dir \"{tempDir}\" --repo {repo}",
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            CreateNoWindow = true
+                        };
+
+                        var process = Process.Start(psi);
+                        if (process != null)
+                        {
+                            await process.WaitForExitAsync(cancellationToken);
+                            if (process.ExitCode != 0)
+                            {
+                                var error = await process.StandardError.ReadToEndAsync(cancellationToken);
+                                throw new InvalidOperationException($"Failed to download artifact: {error}");
+                            }
+                        }
+                    });
+
+                // Install the downloaded binary
+                var exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? "Reshape.Cli.exe"
+                    : "Reshape.Cli";
+
+                var newExePath = Directory.GetFiles(tempDir, exeName, SearchOption.AllDirectories).FirstOrDefault();
+                if (newExePath == null)
+                {
+                    throw new FileNotFoundException($"Could not find {exeName} in the downloaded artifact");
+                }
+
+                var currentExePath = Environment.ProcessPath
+                    ?? Process.GetCurrentProcess().MainModule?.FileName
+                    ?? throw new InvalidOperationException("Could not determine current executable path");
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    ReplaceWindowsExecutable(currentExePath, newExePath);
+                }
+                else
+                {
+                    File.Copy(newExePath, currentExePath, overwrite: true);
+                    var chmod = Process.Start("chmod", $"+x \"{currentExePath}\"");
+                    if (chmod != null)
+                    {
+                        chmod.WaitForExit();
+                    }
+                }
+
+                AnsiConsole.MarkupLine($"\n[green]✓ Successfully installed build from PR #{prNumber}![/]");
+                AnsiConsole.MarkupLine($"[dim]Build: {buildRun.HeadSha[..7]} from {buildRun.CreatedAt:g}[/]");
+
+                return 0;
+            }
+            finally
+            {
+                try
+                {
+                    Directory.Delete(tempDir, recursive: true);
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error installing PR build: {Markup.Escape(ex.Message)}[/]");
+            return 1;
+        }
+    }
+
+    private static async Task<GitHubPullRequest[]?> FetchOpenPullRequests(CancellationToken cancellationToken)
+    {
+        const string repo = "jomaxso/Reshape";
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("User-Agent", "Reshape-CLI");
+        client.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
+
+        return await AnsiConsole.Status()
+            .Spinner(Spinner.Known.Dots)
+            .StartAsync("Fetching open pull requests...", async ctx =>
+            {
+                try
+                {
+                    var url = $"https://api.github.com/repos/{repo}/pulls?state=open&sort=updated&direction=desc";
+                    var prs = await client.GetFromJsonAsync(
+                        url,
+                        AppJsonSerializerContext.Default.GitHubPullRequestArray,
+                        cancellationToken);
+                    return prs;
+                }
+                catch (HttpRequestException)
+                {
+                    return null;
+                }
+            });
+    }
+
+    private static bool IsGitHubCliAvailable()
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "gh",
+                Arguments = "--version",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+            var process = Process.Start(psi);
+            process?.WaitForExit();
+            return process?.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
         }
     }
 
@@ -407,4 +737,28 @@ internal record GitHubRelease(
 internal record GitHubAsset(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("browser_download_url")] string BrowserDownloadUrl
+);
+
+internal record GitHubPullRequest(
+    [property: JsonPropertyName("number")] int Number,
+    [property: JsonPropertyName("state")] string State,
+    [property: JsonPropertyName("title")] string? Title,
+    [property: JsonPropertyName("head")] GitHubPullRequestHead Head
+);
+
+internal record GitHubPullRequestHead(
+    [property: JsonPropertyName("sha")] string Sha
+);
+
+internal record GitHubWorkflowRunsResponse(
+    [property: JsonPropertyName("workflow_runs")] GitHubWorkflowRun[]? WorkflowRuns
+);
+
+internal record GitHubWorkflowRun(
+    [property: JsonPropertyName("id")] long Id,
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("conclusion")] string? Conclusion,
+    [property: JsonPropertyName("head_sha")] string HeadSha,
+    [property: JsonPropertyName("created_at")] DateTime CreatedAt
 );

@@ -7,6 +7,9 @@
 #
 # Or download and run:
 #   ./get-reshape-pr.sh 9
+#
+# Requires:
+#   - GitHub CLI (gh) must be installed and authenticated
 
 set -e
 
@@ -20,7 +23,6 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
-MAGENTA='\033[0;35m'
 GRAY='\033[0;90m'
 NC='\033[0m' # No Color
 
@@ -33,7 +35,6 @@ detect_platform() {
         Linux*)
             PLATFORM="linux"
             ARTIFACT_NAME="reshape-linux-x64"
-            BINARY_NAME="reshape"
             ;;
         Darwin*)
             PLATFORM="macos"
@@ -42,7 +43,6 @@ detect_platform() {
             else
                 ARTIFACT_NAME="reshape-osx-x64"
             fi
-            BINARY_NAME="reshape"
             ;;
         *)
             echo -e "${RED}❌ Unsupported OS: $os${NC}"
@@ -75,6 +75,13 @@ fi
 
 print_header
 
+# Check for gh CLI
+if ! command -v gh >/dev/null 2>&1; then
+    echo -e "${RED}❌ GitHub CLI (gh) is required but not installed.${NC}"
+    echo -e "${YELLOW}   Install from: https://cli.github.com/${NC}"
+    exit 1
+fi
+
 # Warning
 echo -e "${YELLOW}⚠️  WARNING: Only install from PRs you trust!${NC}"
 echo -e "${YELLOW}   Review the code at: https://github.com/$REPO/pull/$PR_NUMBER${NC}"
@@ -91,57 +98,105 @@ fi
 echo ""
 detect_platform
 
-echo -e "${GREEN}📦 Fetching PR #$PR_NUMBER artifacts...${NC}"
+echo -e "${GREEN}📦 Fetching PR #$PR_NUMBER information...${NC}"
 echo -e "${GRAY}   Platform: $PLATFORM ($ARTIFACT_NAME)${NC}"
-echo ""
 
-# Get workflow runs for this PR
-WORKFLOWS_URL="https://api.github.com/repos/$REPO/actions/runs?event=pull_request&status=success&per_page=100"
+# Get PR head SHA
+PR_INFO=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '{head_sha: .head.sha, state: .state}')
+HEAD_SHA=$(echo "$PR_INFO" | jq -r '.head_sha')
+PR_STATE=$(echo "$PR_INFO" | jq -r '.state')
 
-# Fetch workflow runs
-RESPONSE=$(curl -fsSL -H "Accept: application/vnd.github+json" \
-    -H "User-Agent: Reshape-PR-Installer" \
-    "$WORKFLOWS_URL")
+if [[ "$PR_STATE" != "open" ]]; then
+    echo -e "${YELLOW}⚠️  Warning: PR #$PR_NUMBER is $PR_STATE${NC}"
+fi
 
-# Find the most recent run for this PR
-RUN_ID=$(echo "$RESPONSE" | grep -o "\"id\":[0-9]*" | head -1 | cut -d':' -f2)
-RUN_URL=$(echo "$RESPONSE" | grep -o "\"html_url\":\"[^\"]*\"" | head -1 | cut -d'"' -f4)
+echo -e "${GRAY}   PR HEAD SHA: $HEAD_SHA${NC}"
 
-if [[ -z "$RUN_ID" ]]; then
-    echo -e "${RED}❌ No successful workflow run found for PR #$PR_NUMBER${NC}"
-    echo -e "${YELLOW}   Check if the PR has completed builds: https://github.com/$REPO/pull/$PR_NUMBER/checks${NC}"
+# Find workflow run
+echo -e "${GREEN}🔍 Finding Build and Release workflow run...${NC}"
+
+WORKFLOW_RUN=$(gh api "repos/$REPO/actions/workflows/build-and-release.yml/runs?event=pull_request&head_sha=$HEAD_SHA" --jq '.workflow_runs | sort_by(.created_at) | reverse | .[0] | {id: .id, status: .status, conclusion: .conclusion, html_url: .html_url}')
+
+RUN_ID=$(echo "$WORKFLOW_RUN" | jq -r '.id')
+RUN_STATUS=$(echo "$WORKFLOW_RUN" | jq -r '.status')
+RUN_CONCLUSION=$(echo "$WORKFLOW_RUN" | jq -r '.conclusion')
+RUN_URL=$(echo "$WORKFLOW_RUN" | jq -r '.html_url')
+
+if [[ -z "$RUN_ID" ]] || [[ "$RUN_ID" == "null" ]]; then
+    echo -e "${RED}❌ No Build and Release workflow run found for this PR${NC}"
+    echo -e "${YELLOW}   The workflow may not have started yet.${NC}"
+    echo -e "${YELLOW}   Check: https://github.com/$REPO/pull/$PR_NUMBER/checks${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}✅ Found workflow run ID: $RUN_ID${NC}"
+echo -e "${GRAY}   Run ID: $RUN_ID${NC}"
+echo -e "${GRAY}   Status: $RUN_STATUS | Conclusion: $RUN_CONCLUSION${NC}"
+
+if [[ "$RUN_STATUS" != "completed" ]]; then
+    echo -e "${YELLOW}⏳ Workflow is still $RUN_STATUS. Please wait for it to complete.${NC}"
+    echo -e "${YELLOW}   Check: $RUN_URL${NC}"
+    exit 1
+fi
+
+if [[ "$RUN_CONCLUSION" != "success" ]]; then
+    echo -e "${RED}❌ Workflow run did not succeed (conclusion: $RUN_CONCLUSION)${NC}"
+    echo -e "${YELLOW}   Check: $RUN_URL${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Found successful workflow run!${NC}"
 echo ""
 
-# Get artifacts for this run
-ARTIFACTS_URL="https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts"
-ARTIFACTS_RESPONSE=$(curl -fsSL -H "Accept: application/vnd.github+json" \
-    -H "User-Agent: Reshape-PR-Installer" \
-    "$ARTIFACTS_URL")
+# Download artifact
+echo -e "${GREEN}📥 Downloading artifact: $ARTIFACT_NAME${NC}"
 
-# GitHub requires authentication to download artifacts via API
-echo -e "${YELLOW}⚠️  GitHub requires authentication to download artifacts.${NC}"
+TEMP_DIR=$(mktemp -d -t reshape-pr-${PR_NUMBER}-XXXXXXXX)
+DOWNLOAD_DIR="$TEMP_DIR/download"
+
+cleanup() {
+    if [[ -d "$TEMP_DIR" ]]; then
+        rm -rf "$TEMP_DIR"
+    fi
+}
+
+trap cleanup EXIT
+
+if ! gh run download "$RUN_ID" --name "$ARTIFACT_NAME" --dir "$DOWNLOAD_DIR" --repo "$REPO"; then
+    echo -e "${RED}❌ Failed to download artifact${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Download complete!${NC}"
 echo ""
-echo -e "${CYAN}Option 1: Download manually${NC}"
-echo -e "${NC}  1. Go to: ${BLUE}$RUN_URL${NC}"
-echo -e "${NC}  2. Scroll to 'Artifacts'${NC}"
-echo -e "${NC}  3. Download '${ARTIFACT_NAME}.tar.gz' or '${ARTIFACT_NAME}.zip'${NC}"
-echo -e "${NC}  4. Extract to: ${OUTPUT_PATH}${NC}"
-echo ""
-echo -e "${CYAN}Option 2: Use GitHub CLI (gh)${NC}"
-echo -e "${NC}  gh run download $RUN_ID --name $ARTIFACT_NAME --repo $REPO${NC}"
-echo -e "${NC}  tar -xzf ${ARTIFACT_NAME}.tar.gz -C $OUTPUT_PATH${NC}"
-echo ""
-echo -e "${MAGENTA}Direct link to workflow run:${NC}"
-echo -e "  ${BLUE}$RUN_URL${NC}"
+echo -e "${GREEN}📦 Installing to: $OUTPUT_PATH${NC}"
+
+# Create output directory
+mkdir -p "$OUTPUT_PATH"
+
+# Find and extract archive
+ARCHIVE=$(find "$DOWNLOAD_DIR" -name "*.tar.gz" -o -name "*.zip" | head -1)
+
+if [[ -z "$ARCHIVE" ]]; then
+    echo -e "${RED}❌ No archive found in downloaded artifact${NC}"
+    exit 1
+fi
+
+# Extract
+if [[ "$ARCHIVE" == *.tar.gz ]]; then
+    tar -xzf "$ARCHIVE" -C "$OUTPUT_PATH"
+elif [[ "$ARCHIVE" == *.zip ]]; then
+    unzip -o "$ARCHIVE" -d "$OUTPUT_PATH" >/dev/null
+fi
+
+echo -e "${GREEN}✅ Installation complete!${NC}"
 echo ""
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${CYAN}💡 After extracting, add to PATH:${NC}"
-echo -e "${NC}   export PATH=\"\$PATH:$OUTPUT_PATH\"${NC}"
+echo -e "${GREEN}🎉 Reshape CLI from PR #$PR_NUMBER is ready!${NC}"
 echo ""
-echo -e "${CYAN}   Or run directly:${NC}"
-echo -e "${NC}   $OUTPUT_PATH/$BINARY_NAME run${NC}"
+echo -e "${CYAN}Run the CLI:${NC}"
+echo -e "${NC}   $OUTPUT_PATH/reshape run${NC}"
+echo ""
+echo -e "${CYAN}Or add to PATH:${NC}"
+echo -e "${NC}   export PATH=\"\$PATH:$OUTPUT_PATH\"${NC}"
+echo -e "${NC}   reshape run${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

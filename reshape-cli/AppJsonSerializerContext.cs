@@ -28,6 +28,12 @@ using Reshape.Cli.Commands;
 [JsonSerializable(typeof(GitHubRelease))]
 [JsonSerializable(typeof(GitHubRelease[]))]
 [JsonSerializable(typeof(GitHubAsset))]
+[JsonSerializable(typeof(GitHubPullRequest))]
+[JsonSerializable(typeof(GitHubPullRequest[]))]
+[JsonSerializable(typeof(GitHubPullRequestHead))]
+[JsonSerializable(typeof(GitHubWorkflowRunsResponse))]
+[JsonSerializable(typeof(GitHubWorkflowRun))]
+[JsonSerializable(typeof(GitHubWorkflowRun[]))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
