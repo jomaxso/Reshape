@@ -21,6 +21,7 @@
 ## 📋 Table of Contents
 
 - [Installation](#-installation)
+- [Testing Pull Requests](#-testing-pull-requests)
 - [Quick Start](#-quick-start)
 - [CLI Commands](#-cli-commands)
 - [Web UI](#-web-ui)
@@ -103,6 +104,22 @@ cd reshape-cli
 dotnet publish -c Release -r <RID> --self-contained
 # Replace <RID> with: win-x64, linux-x64, or osx-arm64
 ```
+
+## 🧪 Testing Pull Requests
+
+Want to try out a feature before it's merged? Each pull request automatically gets a comment with installation instructions!
+
+When you open a PR, GitHub Actions will automatically:
+- ✅ Build the code for all platforms (Windows, Linux, macOS)
+- 📦 Create downloadable artifacts
+- 💬 Post a comment with detailed installation instructions
+
+Just check the PR comments for the "🚀 Test This Pull Request" section with:
+- Direct links to download pre-built binaries
+- Instructions for building locally from the PR branch
+- Quick start examples specific to that PR
+
+This makes it easy for maintainers and contributors to test changes before merging!
 
 ## 🚀 Quick Start
 

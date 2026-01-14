@@ -1,0 +1,99 @@
+name: PR Installation Instructions
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened]
+        branches:
+            - main
+
+permissions:
+    pull-requests: write
+    contents: read
+
+jobs:
+    post-install-instructions:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: "10.0.x"
+
+            - name: Get PR Information
+              id: pr-info
+              run: |
+                  echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+                  echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+                  SHORT_SHA=$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-7)
+                  echo "sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+                  echo "repo=${{ github.repository }}" >> $GITHUB_OUTPUT
+
+            - name: Get Package Version
+              id: version
+              run: |
+                  cd reshape-cli
+                  VERSION=$(grep -oP '<Version>\K[^<]+' Reshape.Cli.csproj)
+                  echo "base_version=${VERSION}" >> $GITHUB_OUTPUT
+                  echo "full_version=${VERSION}-pr${{ steps.pr-info.outputs.pr_number }}" >> $GITHUB_OUTPUT
+
+            - name: Post Installation Instructions
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const prNumber = ${{ steps.pr-info.outputs.pr_number }};
+                      const branch = '${{ steps.pr-info.outputs.branch }}';
+                      const sha = '${{ steps.pr-info.outputs.sha }}';
+                      const repo = '${{ steps.pr-info.outputs.repo }}';
+                      const baseVersion = '${{ steps.version.outputs.base_version }}';
+                      const fullVersion = '${{ steps.version.outputs.full_version }}';
+
+                      const body = `## 🚀 Dogfood this PR with:
+
+                      **⚠️ WARNING: Do not do this without first carefully reviewing the code of this PR to satisfy yourself it is safe.**
+
+                      **Windows (PowerShell):**
+                      \`\`\`powershell
+                      iex "& { $(irm https://raw.githubusercontent.com/${repo}/main/scripts/get-reshape-pr.ps1) } ${prNumber}"
+                      \`\`\`
+
+                      **Linux / macOS (Bash):**
+                      \`\`\`bash
+                      curl -fsSL https://raw.githubusercontent.com/${repo}/main/scripts/get-reshape-pr.sh | bash -s -- ${prNumber}
+                      \`\`\`
+                      `;
+
+                      // Find existing comment
+                      const { data: comments } = await github.rest.issues.listComments({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: prNumber
+                      });
+
+                      const botComment = comments.find(comment => 
+                        comment.user.type === 'Bot' && 
+                        comment.body.includes('<!-- pr-install-instructions -->')
+                      );
+
+                      if (botComment) {
+                        // Update existing comment
+                        await github.rest.issues.updateComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          comment_id: botComment.id,
+                          body: body
+                        });
+                        console.log('Updated existing comment');
+                      } else {
+                        // Create new comment
+                        await github.rest.issues.createComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: prNumber,
+                          body: body
+                        });
+                        console.log('Created new comment');
+                      }
