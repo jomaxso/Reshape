@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for Nerdbank.GitVersioning
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -75,11 +77,25 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for Nerdbank.GitVersioning
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Nerdbank.GitVersioning
+        run: dotnet tool install -g nbgv
+
+      - name: Set version for PR builds
+        if: github.event_name == 'pull_request'
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          echo "NBGV_PublicRelease=false" >> $GITHUB_ENV
+          echo "NBGV_ContinuousIntegrationBuild=true" >> $GITHUB_ENV
+          echo "BUILD_METADATA=pr$PR_NUMBER" >> $GITHUB_ENV
+        shell: bash
 
       - name: Download UI artifact
         uses: actions/download-artifact@v4.1.3
@@ -142,6 +158,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for Nerdbank.GitVersioning
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4.1.3
