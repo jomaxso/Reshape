@@ -32,18 +32,18 @@ internal sealed class ReshapeCliCommand : AsynchronousCommandLineAction
                 .Title("[cyan]What would you like to do?[/]")
                 .PageSize(10)
                 .AddChoices(
-                    "🌐 Run - Start Web UI",
-                     "📁 File - Manage Files",
-                    "🎨 Pattern - Manage Patterns",
-                    "⬆️ Update - Check for Updates"
+                    "Run - Start Web UI",
+                     "File - Manage Files",
+                    "Pattern - Manage Patterns",
+                    "Update - Check for Updates"
                 ));
 
         AsynchronousCommandLineAction? command = commandString switch
         {
-            "🌐 Run - Start Web UI" => new RunCommand(),
-            "📁 File - Manage Files" => new FileCommand(),
-            "🎨 Pattern - Manage Patterns" => new PatternCommand(),
-            "⬆️ Update - Check for Updates" => new UpdateCommand(),
+            "Run - Start Web UI" => new RunCommand(),
+            "File - Manage Files" => new FileCommand(),
+            "Pattern - Manage Patterns" => new PatternCommand(),
+            "Update - Check for Updates" => new UpdateCommand(),
             _ => null
         };
 
