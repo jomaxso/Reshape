@@ -375,12 +375,55 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                         }
                     });
 
+                // Extract the downloaded archive
+                var archivePath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? Path.Combine(tempDir, $"{assetName}.zip")
+                    : Path.Combine(tempDir, $"{assetName}.tar.gz");
+
+                if (!File.Exists(archivePath))
+                {
+                    throw new FileNotFoundException($"Downloaded archive not found: {archivePath}");
+                }
+
+                var extractDir = Path.Combine(tempDir, "extracted");
+                Directory.CreateDirectory(extractDir);
+
+                await AnsiConsole.Status()
+                    .Spinner(Spinner.Known.Dots)
+                    .StartAsync("Extracting archive...", async ctx =>
+                    {
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        {
+                            System.IO.Compression.ZipFile.ExtractToDirectory(archivePath, extractDir);
+                        }
+                        else
+                        {
+                            var psi = new ProcessStartInfo
+                            {
+                                FileName = "tar",
+                                Arguments = $"-xzf \"{archivePath}\" -C \"{extractDir}\"",
+                                UseShellExecute = false,
+                                CreateNoWindow = true
+                            };
+
+                            var process = Process.Start(psi);
+                            if (process != null)
+                            {
+                                await process.WaitForExitAsync(cancellationToken);
+                                if (process.ExitCode != 0)
+                                {
+                                    throw new InvalidOperationException("Failed to extract archive");
+                                }
+                            }
+                        }
+                    });
+
                 // Install the downloaded binary
                 var exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                     ? "reshape.exe"
                     : "reshape";
 
-                var newExePath = Directory.GetFiles(tempDir, exeName, SearchOption.AllDirectories).FirstOrDefault();
+                var newExePath = Directory.GetFiles(extractDir, exeName, SearchOption.AllDirectories).FirstOrDefault();
                 if (newExePath == null)
                 {
                     throw new FileNotFoundException($"Could not find {exeName} in the downloaded artifact");
