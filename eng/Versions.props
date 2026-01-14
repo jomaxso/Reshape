@@ -1,0 +1,35 @@
+<Project>
+  <PropertyGroup>
+    <!-- Reshape Version -->
+    <MajorVersion>0</MajorVersion>
+    <MinorVersion>1</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <VersionPrefix>$(MajorVersion).$(MinorVersion).$(PatchVersion)</VersionPrefix>
+    
+    <!-- Prerelease Label -->
+    <!-- Leave empty for stable releases, set to 'preview.1', 'rc.1', etc. for prereleases -->
+    <PreReleaseVersionLabel></PreReleaseVersionLabel>
+    
+    <!-- Build Metadata -->
+    <!-- This gets populated automatically by build scripts/CI -->
+    <BuildMetadata Condition="'$(BuildMetadata)' == ''"></BuildMetadata>
+    
+    <!-- Computed Version -->
+    <Version Condition="'$(PreReleaseVersionLabel)' != '' AND '$(BuildMetadata)' != ''">$(VersionPrefix)-$(PreReleaseVersionLabel)+$(BuildMetadata)</Version>
+    <Version Condition="'$(PreReleaseVersionLabel)' != '' AND '$(BuildMetadata)' == ''">$(VersionPrefix)-$(PreReleaseVersionLabel)</Version>
+    <Version Condition="'$(PreReleaseVersionLabel)' == '' AND '$(BuildMetadata)' != ''">$(VersionPrefix)+$(BuildMetadata)</Version>
+    <Version Condition="'$(PreReleaseVersionLabel)' == '' AND '$(BuildMetadata)' == ''">$(VersionPrefix)</Version>
+    
+    <!-- Assembly Versions -->
+    <AssemblyVersion>$(MajorVersion).$(MinorVersion).0.0</AssemblyVersion>
+    <FileVersion>$(MajorVersion).$(MinorVersion).$(PatchVersion).0</FileVersion>
+  </PropertyGroup>
+
+  <!-- Package Versions -->
+  <PropertyGroup>
+    <SpectreConsoleVersion>0.54.0</SpectreConsoleVersion>
+    <SystemCommandLineVersion>2.0.1</SystemCommandLineVersion>
+    <MetadataExtractorVersion>2.8.1</MetadataExtractorVersion>
+    <TimeZoneConverterVersion>7.2.0</TimeZoneConverterVersion>
+  </PropertyGroup>
+</Project>

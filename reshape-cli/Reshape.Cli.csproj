@@ -2,22 +2,22 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <RuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;linux-musl-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
     <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <EnablePackageValidation>false</EnablePackageValidation>
+    <AssemblyName>reshape</AssemblyName>
+    <RootNamespace>Reshape.Cli</RootNamespace>
     <PublishAot>true</PublishAot>
-    <PackAsTool>true</PackAsTool>
     <UserSecretsId>reshape-cli-b7a76149d97192ff3b537c52b277d8325b66e5f8ce14eb6531e4e7fcdbf5fd9b</UserSecretsId>
-    <Version>0.1.0</Version>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+    <InformationalVersion>$(Version)</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.CommandLine" Version="2.0.1" />
-    <PackageReference Include="Spectre.Console" Version="0.54.0" />
-    <PackageReference Include="MetadataExtractor" Version="2.8.1" />
-    <PackageReference Include="TimeZoneConverter" Version="7.2.0" />
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="MetadataExtractor" />
+    <PackageReference Include="TimeZoneConverter" />
   </ItemGroup>
 
 </Project>

@@ -33,8 +33,18 @@ jobs:
                     VERSION="${{ github.event.inputs.version }}"
                     echo "Using manual version: ${VERSION}"
                   else
-                    VERSION=$(grep -oP '<Version>\K[^<]+' reshape-cli/Reshape.Cli.csproj)
-                    echo "Using version from .csproj: ${VERSION}"
+                    # Read version from eng/Versions.props
+                    MAJOR=$(grep -oP '<MajorVersion>\K[^<]+' eng/Versions.props)
+                    MINOR=$(grep -oP '<MinorVersion>\K[^<]+' eng/Versions.props)
+                    PATCH=$(grep -oP '<PatchVersion>\K[^<]+' eng/Versions.props)
+                    PRERELEASE=$(grep -oP '<PreReleaseVersionLabel>\K[^<]+' eng/Versions.props)
+                    
+                    VERSION="${MAJOR}.${MINOR}.${PATCH}"
+                    if [ -n "$PRERELEASE" ]; then
+                      VERSION="${VERSION}-${PRERELEASE}"
+                    fi
+                    
+                    echo "Using version from eng/Versions.props: ${VERSION}"
                   fi
 
                   echo "version=${VERSION}" >> $GITHUB_OUTPUT

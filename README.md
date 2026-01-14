@@ -352,7 +352,14 @@ Please read our [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## � Versioning
+
+Reshape follows [Semantic Versioning](https://semver.org/) with centralized version management. See [VERSIONING.md](docs/VERSIONING.md) for details on:
+- How versions are managed in `eng/Versions.props`
+- Automated nightly version bumps
+- Release workflows and processes
+
+## �🙏 Acknowledgments
 
 - [Spectre.Console](https://spectreconsole.net/) - Beautiful console UI
 - [MetadataExtractor](https://github.com/drewnoakes/metadata-extractor-dotnet) - EXIF metadata extraction
