@@ -26,7 +26,7 @@ jobs:
                   SHORT_SHA=$(git rev-parse --short HEAD)
                   BUILD_NUMBER=$(git rev-list --count HEAD)
                   PRERELEASE_VERSION="${BASE_VERSION}-pre.${BUILD_NUMBER}+${SHORT_SHA}"
-                  
+
                   echo "prerelease_version=${PRERELEASE_VERSION}" >> $GITHUB_OUTPUT
                   echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
                   echo "build_number=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
@@ -53,27 +53,27 @@ jobs:
                   name: "🚧 Prerelease ${{ steps.version.outputs.prerelease_version }}"
                   body: |
                       # 🚧 Automated Prerelease Build
-                      
+
                       **Version:** `${{ steps.version.outputs.prerelease_version }}`  
                       **Commit:** ${{ steps.version.outputs.short_sha }}  
                       **Build:** #${{ steps.version.outputs.build_number }}
-                      
+
                       ---
-                      
+
                       **⚠️ This is a prerelease build from the main branch. Not recommended for production use.**
-                      
+
                       ```bash
                       curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.sh | bash -s -- --prerelease
                       ```
                       Or
-                      
+
                       Run remotely in PowerShell:
                       ```powershell
                       iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.ps1) } -Prerelease"
                       ```
-                      
+
                       ---
-                      
+
                       *This prerelease is automatically created on every push to main.*
                   draft: false
                   prerelease: true

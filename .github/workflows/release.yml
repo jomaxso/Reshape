@@ -36,9 +36,9 @@ jobs:
                     VERSION=$(grep -oP '<Version>\K[^<]+' reshape-cli/Reshape.Cli.csproj)
                     echo "Using version from .csproj: ${VERSION}"
                   fi
-                  
+
                   echo "version=${VERSION}" >> $GITHUB_OUTPUT
-                  
+
                   # Check if tag already exists
                   if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
                     echo "::error::Tag v${VERSION} already exists!"
@@ -48,14 +48,14 @@ jobs:
             - name: Create Release Tag
               run: |
                   VERSION="${{ steps.version.outputs.version }}"
-                  
+
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
-                  
+
                   # Create and push tag
                   git tag -a "v${VERSION}" -m "Release v${VERSION}"
                   git push origin "v${VERSION}"
-                  
+
                   echo "Created and pushed tag v${VERSION}"
 
             - name: Wait for Tag Push
@@ -68,25 +68,25 @@ jobs:
                   name: v${{ steps.version.outputs.version }}
                   body: |
                       # Release v${{ steps.version.outputs.version }}
-                      
+
                       ```bash
                       curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.sh | bash
                       ```
                       Or
-                      
+
                       Run remotely in PowerShell:
                       ```powershell
                       iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/install.ps1) }"
                       ```
-                      
+
                       Or download the binaries manually below.
-                      
+
                       ## What's Changed
-                      
+
                       _Release notes will be generated automatically._
-                      
+
                       ---
-                      
+
                       **Full Changelog**: https://github.com/${{ github.repository }}/commits/v${{ steps.version.outputs.version }}
                   draft: false
                   prerelease: ${{ github.event.inputs.prerelease == 'true' }}
