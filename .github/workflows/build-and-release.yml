@@ -3,14 +3,14 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '10.0.x'
-  NODE_VERSION: '20.x'
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "20.x"
 
 jobs:
   build-ui:
@@ -26,22 +26,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: reshape-ui/package-lock.json
+          cache: "npm"
+          cache-dependency-path: src/reshape-ui/package-lock.json
 
       - name: Install UI dependencies
-        working-directory: reshape-ui
+        working-directory: src/reshape-ui
         run: npm ci
 
       - name: Build UI
-        working-directory: reshape-ui
+        working-directory: src/reshape-ui
         run: npm run build
 
       - name: Upload UI artifact
         uses: actions/upload-artifact@v4
         with:
           name: ui-build
-          path: reshape-cli/wwwroot/
+          path: src/reshape-cli/wwwroot/
           retention-days: 1
 
   build:
@@ -64,13 +64,13 @@ jobs:
             runner: ubuntu-latest
             rid: linux-x64
             artifact: reshape-linux-x64
-            ext: ''
+            ext: ""
           - os: macos
             arch: arm64
             runner: macos-latest
             rid: osx-arm64
             artifact: reshape-osx-arm64
-            ext: ''
+            ext: ""
 
     steps:
       - name: Checkout code
@@ -85,39 +85,39 @@ jobs:
         uses: actions/download-artifact@v4.1.3
         with:
           name: ui-build
-          path: reshape-cli/wwwroot/
+          path: src/reshape-cli/wwwroot/
 
       - name: Restore dependencies
-        working-directory: reshape-cli
+        working-directory: src/reshape-cli
         run: dotnet restore
 
       - name: Publish AOT binary
-        working-directory: reshape-cli
+        working-directory: src/reshape-cli
         run: |
           dotnet publish -c Release -r ${{ matrix.rid }} --self-contained -o ./publish/${{ matrix.artifact }}
 
       - name: Create archive (Unix)
         if: matrix.os != 'windows'
-        working-directory: reshape-cli/publish
+        working-directory: src/reshape-cli/publish
         run: |
           tar -czf ${{ matrix.artifact }}.tar.gz ${{ matrix.artifact }}/
 
       - name: Create archive (Windows)
         if: matrix.os == 'windows'
-        working-directory: reshape-cli/publish
+        working-directory: src/reshape-cli/publish
         shell: pwsh
         run: |
           Compress-Archive -Path ${{ matrix.artifact }}/* -DestinationPath ${{ matrix.artifact }}.zip
 
       - name: Generate checksum (Unix)
         if: matrix.os != 'windows'
-        working-directory: reshape-cli/publish
+        working-directory: src/reshape-cli/publish
         run: |
           shasum -a 256 ${{ matrix.artifact }}.tar.gz > ${{ matrix.artifact }}.tar.gz.sha256
 
       - name: Generate checksum (Windows)
         if: matrix.os == 'windows'
-        working-directory: reshape-cli/publish
+        working-directory: src/reshape-cli/publish
         shell: pwsh
         run: |
           $hash = Get-FileHash -Algorithm SHA256 -Path "${{ matrix.artifact }}.zip"
@@ -128,7 +128,7 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: |
-            reshape-cli/publish/${{ matrix.artifact }}.*
+            src/reshape-cli/publish/${{ matrix.artifact }}.*
           retention-days: 7
 
   release:
@@ -153,8 +153,8 @@ jobs:
 
       - name: Copy installation scripts
         run: |
-          cp scripts/install.ps1 artifacts/
-          cp scripts/install.sh artifacts/
+          cp eng/scripts/install.ps1 artifacts/
+          cp eng/scripts/install.sh artifacts/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

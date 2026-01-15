@@ -14,7 +14,7 @@
     The directory where Reshape should be installed. Defaults to ~/.reshape
 
 .EXAMPLE
-    iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/get-reshape-pr.ps1) } 9"
+    iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/get-reshape-pr.ps1) } 9"
 
 .EXAMPLE
     ./get-reshape-pr.ps1 -PrNumber 9 -OutputPath "C:\Tools\Reshape"

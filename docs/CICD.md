@@ -92,13 +92,13 @@ For Windows users. Features:
 
 ```powershell
 # Latest version
-iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.ps1) }"
+iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) }"
 
 # Specific version
-iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.ps1) } -Version v0.1.0"
+iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) } -Version v0.1.0"
 
 # Custom install directory
-iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.ps1) } -InstallDir C:\Tools\Reshape"
+iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) } -InstallDir C:\Tools\Reshape"
 ```
 
 ### Bash Script (`install.sh`)
@@ -115,13 +115,13 @@ For Linux and macOS users. Features:
 
 ```bash
 # Latest version
-curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.sh | bash
 
 # Specific version
-curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash -s -- --version v0.1.0
+curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.sh | bash -s -- --version v0.1.0
 
 # Custom install directory
-curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash -s -- --install-dir ~/bin
+curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.sh | bash -s -- --install-dir ~/bin
 ```
 
 ## Self-Update System
@@ -171,7 +171,7 @@ On Unix systems:
 
 ### Prerequisites
 
-1. Update version in `reshape-cli/Reshape.Cli.csproj`:
+1. Update version in `src/reshape-cli/Reshape.Cli.csproj`:
    ```xml
    <Version>X.Y.Z</Version>
    ```

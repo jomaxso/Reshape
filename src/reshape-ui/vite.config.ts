@@ -5,7 +5,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   build: {
-    outDir: '../reshape-cli/wwwroot',
+    outDir: '../src/reshape-cli/wwwroot',
     emptyOutDir: true
   }
 })

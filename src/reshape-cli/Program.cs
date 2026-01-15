@@ -15,6 +15,7 @@ return await new RootCommand("Reshape CLI - Batch rename files using metadata pa
         new("file", "List, rename, and manage files")
         {
             Action = new FileCommand(),
+            Options = { GlobalOptions.Path, GlobalOptions.Extension, GlobalOptions.Pattern },
             Subcommands =
             {
                 new("list", "List files in a folder")
@@ -47,7 +48,7 @@ return await new RootCommand("Reshape CLI - Batch rename files using metadata pa
         new("update", "Update Reshape CLI to the latest version")
         {
             Action = new UpdateCommand(),
-            Options = { UpdateCommand.StableOption, UpdateCommand.PrereleaseOption, UpdateCommand.CheckOption, UpdateCommand.VersionOption, UpdateCommand.PrOption }
+            Options = { UpdateCommand.PreviewOption, UpdateCommand.CheckOption, UpdateCommand.VersionOption, UpdateCommand.PrOption }
         }
     },
 }.Parse(args).InvokeAsync();

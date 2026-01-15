@@ -1,8 +1,6 @@
 using System.CommandLine;
 using Spectre.Console;
-using Reshape.Cli.Utilities;
 using System.CommandLine.Invocation;
-using System.ComponentModel.Design;
 
 namespace Reshape.Cli.Commands;
 
@@ -26,21 +24,24 @@ internal sealed class FileCommand : AsynchronousCommandLineAction
             .Title("[cyan]What would you like to do?[/]")
             .PageSize(10)
             .AddChoices(
-                "📄 List Files",
-                "✏️ Rename Files",
-                "🔍 Preview Rename"
+                "List Files",
+                "Rename Files",
+                "Preview Rename"
             ));
 
         AsynchronousCommandLineAction? command = commandString switch
         {
-            "📄 List Files" => new ListCommand(),
-            "✏️ Rename Files" => new RenameCommand(),
-            "🔍 Preview Rename" => new PreviewCommand(),
+            "List Files" => new ListCommand(),
+            "Rename Files" => new RenameCommand(),
+            "Preview Rename" => new PreviewCommand(),
             _ => null
         };
 
-        return command is null
-            ? 0
-            : await command.InvokeAsync(parseResult, cancellationToken);
+        if (command is null)
+        {
+            return 1;
+        }
+
+        return await command.InvokeAsync(parseResult, cancellationToken);
     }
 }

@@ -156,7 +156,7 @@ internal sealed class RunCommand : AsynchronousCommandLineAction
                           string.Join("\n", addresses.Select(url =>
                               $"[cyan]→[/] [link={url}]{url}[/]"))))
             {
-                Header = new PanelHeader("[yellow]🚀 Server Started[/]", Justify.Center),
+                Header = new PanelHeader("[yellow]Server Started[/]", Justify.Center),
                 Border = BoxBorder.Double,
                 BorderStyle = new Style(Color.Green),
                 Padding = new Padding(2, 1)

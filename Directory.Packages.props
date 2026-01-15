@@ -1,0 +1,16 @@
+<Project>
+  <!-- Enable Central Package Management (CPM) -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <!-- Package Versions -->
+  <ItemGroup>
+    <!-- CLI Dependencies -->
+    <PackageVersion Include="Spectre.Console" Version="$(SpectreConsoleVersion)" />
+    <PackageVersion Include="System.CommandLine" Version="$(SystemCommandLineVersion)" />
+    <PackageVersion Include="MetadataExtractor" Version="$(MetadataExtractorVersion)" />
+    <PackageVersion Include="TimeZoneConverter" Version="$(TimeZoneConverterVersion)" />
+  </ItemGroup>
+</Project>

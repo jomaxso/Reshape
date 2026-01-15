@@ -36,24 +36,30 @@
 
 #### Windows (PowerShell)
 ```powershell
-iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.ps1) }"
+iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) }"
 ```
+
+This automatically installs Reshape and adds it to your user PATH. **Restart your terminal** after installation.
 
 #### Linux / macOS (Bash)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.sh | bash
 ```
+
+Follow the on-screen instructions to add Reshape to your PATH.
+
+> **Note:** Having issues with PATH? See [PATH Setup Guide](docs/PATH_SETUP.md) for troubleshooting.
 
 ### Install Specific Version
 
 #### Windows
 ```powershell
-iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.ps1) } -Version v0.1.0"
+iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) } -Version v0.1.0"
 ```
 
 #### Linux / macOS
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash -s -- --version v0.1.0
+curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.sh | bash -s -- --version v0.1.0
 ```
 
 ### Update to Latest Version
@@ -89,10 +95,10 @@ git clone https://github.com/jomaxso/Reshape.git
 cd Reshape
 
 # Build the CLI
-dotnet build reshape-cli/
+dotnet build src/reshape-cli/
 
 # (Optional) Build the Web UI
-cd reshape-ui
+cd src/reshape-ui
 npm install
 npm run build
 ```
@@ -100,7 +106,7 @@ npm run build
 #### Publish as Native Executable
 
 ```powershell
-cd reshape-cli
+cd src/reshape-cli
 dotnet publish -c Release -r <RID> --self-contained
 # Replace <RID> with: win-x64, linux-x64, or osx-arm64
 ```
@@ -127,26 +133,26 @@ This makes it easy for maintainers and contributors to test changes before mergi
 
 ```powershell
 # List files in a folder
-dotnet run --project reshape-cli/ -- list "C:\Photos" --ext .jpg .png
+dotnet run --project src/reshape-cli/ -- list "C:\Photos" --ext .jpg .png
 
 # Preview rename operations
-dotnet run --project reshape-cli/ -- preview "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
+dotnet run --project src/reshape-cli/ -- preview "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
 
 # Execute rename (interactive - will prompt for confirmation)
-dotnet run --project reshape-cli/ -- rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
+dotnet run --project src/reshape-cli/ -- rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
 
 # Execute rename without confirmation prompt
-dotnet run --project reshape-cli/ -- rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg --no-interactive
+dotnet run --project src/reshape-cli/ -- rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg --no-interactive
 
 # Show available patterns
-dotnet run --project reshape-cli/ -- patterns
+dotnet run --project src/reshape-cli/ -- patterns
 ```
 
 ### Web UI Mode
 
 ```powershell
 # Start the web server
-dotnet run --project reshape-cli/ -- serve
+dotnet run --project src/reshape-cli/ -- serve
 
 # Open browser at http://localhost:5000
 ```
@@ -273,21 +279,22 @@ Tag 3/
 ### Project Structure
 
 ```
-TypeScript/
-├── reshape-cli/           # .NET 10 CLI with embedded web server
-│   ├── Commands/          # CLI command handlers
-│   ├── Utilities/         # Helper classes
-│   ├── wwwroot/           # Compiled Vue app (auto-generated)
-│   ├── Program.cs         # Entry point
-│   ├── FileService.cs     # Core file operations
-│   └── Models.cs          # Data models
-│
-├── reshape-ui/            # Vue 3 + TypeScript frontend
-│   ├── src/
-│   │   ├── components/    # Vue components
-│   │   ├── api.ts         # API client
-│   │   └── types.ts       # TypeScript types
-│   └── vite.config.ts     # Build configuration
+Reshape/
+├── src/
+│   ├── reshape-cli/           # .NET 10 CLI with embedded web server
+│   │   ├── Commands/          # CLI command handlers
+│   │   ├── Utilities/         # Helper classes
+│   │   ├── wwwroot/           # Compiled Vue app (auto-generated)
+│   │   ├── Program.cs         # Entry point
+│   │   ├── FileService.cs     # Core file operations
+│   │   └── Models.cs          # Data models
+│   │
+│   └── reshape-ui/            # Vue 3 + TypeScript frontend
+│       ├── src/
+│       │   ├── components/    # Vue components
+│       │   ├── api.ts         # API client
+│       │   └── types.ts       # TypeScript types
+│       └── vite.config.ts     # Build configuration
 │
 └── docs/                  # Documentation
 ```
@@ -296,11 +303,11 @@ TypeScript/
 
 ```powershell
 # Terminal 1: Start CLI in watch mode
-cd reshape-cli
+cd src/reshape-cli
 dotnet watch run -- serve
 
 # Terminal 2: Start Vue dev server (optional, for hot reload)
-cd reshape-ui
+cd src/reshape-ui
 npm run dev
 ```
 
@@ -308,7 +315,7 @@ npm run dev
 
 ```powershell
 # Build Vue UI first
-cd reshape-ui
+cd src/reshape-ui
 npm run build
 
 # Build CLI (UI is embedded in wwwroot/)
@@ -336,7 +343,7 @@ dotnet publish -c Release -r win-x64 --self-contained
 | [docs/CLI.md](docs/CLI.md) | CLI reference documentation |
 | [docs/API.md](docs/API.md) | REST API documentation |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development guide |
-| [reshape-cli/ARCHITECTURE.md](reshape-cli/ARCHITECTURE.md) | Code architecture overview |
+| [src/reshape-cli/ARCHITECTURE.md](src/reshape-cli/ARCHITECTURE.md) | Code architecture overview |
 
 ## 🤝 Contributing
 
@@ -352,7 +359,14 @@ Please read our [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## � Versioning
+
+Reshape follows [Semantic Versioning](https://semver.org/) with centralized version management. See [VERSIONING.md](docs/VERSIONING.md) for details on:
+- How versions are managed in `eng/Versions.props`
+- Automated nightly version bumps
+- Release workflows and processes
+
+## �🙏 Acknowledgments
 
 - [Spectre.Console](https://spectreconsole.net/) - Beautiful console UI
 - [MetadataExtractor](https://github.com/drewnoakes/metadata-extractor-dotnet) - EXIF metadata extraction

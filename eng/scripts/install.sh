@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Reshape CLI Installation Script for Linux/macOS
-# Usage: curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash
-# Or with version: curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/scripts/install.sh | bash -s -- --version v0.1.0
+# Usage: curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.sh | bash
+# Or with version: curl -fsSL https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.sh | bash -s -- --version v0.1.0
 
 set -e
 

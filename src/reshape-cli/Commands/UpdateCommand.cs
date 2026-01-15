@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
-using System.Net.Http.Json;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
@@ -14,16 +13,9 @@ namespace Reshape.Cli.Commands;
 /// </summary>
 internal sealed class UpdateCommand : AsynchronousCommandLineAction
 {
-    public static readonly Option<bool> StableOption = new("--stable")
+    public static readonly Option<bool> PreviewOption = new("--preview")
     {
-        Description = "Use only stable versions (default)",
-        Arity = ArgumentArity.Zero
-    };
-
-
-    public static readonly Option<bool> PrereleaseOption = new("--prerelease")
-    {
-        Description = "Include prerelease versions",
+        Description = "Include preview versions",
         Arity = ArgumentArity.Zero
     };
 
@@ -49,16 +41,15 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
     {
         var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
         var checkOnly = parseResult.GetValue(CheckOption);
-        var stable = parseResult.GetValue(StableOption);
-        var includePrerelease = parseResult.GetValue(PrereleaseOption);
+        var includePreview = parseResult.GetValue(PreviewOption);
         var specificVersion = parseResult.GetValue(VersionOption);
         var prNumber = parseResult.GetValue(PrOption);
 
         // Validate mutually exclusive options
-        var optionsCount = new[] { stable, includePrerelease, specificVersion != null, prNumber != null }.Count(x => x);
+        var optionsCount = new[] { includePreview, specificVersion != null, prNumber != null }.Count(x => x);
         if (optionsCount > 1)
         {
-            AnsiConsole.MarkupLine("[red]Error: Cannot specify multiple update options (--stable, --prerelease, --version, --pr).[/]");
+            AnsiConsole.MarkupLine("[red]Error: Cannot specify multiple update options (--preview, --version, --pr).[/]");
             return 1;
         }
 
@@ -75,7 +66,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
         }
 
         // Interactive mode
-        if (!noInteractive && !stable && !includePrerelease)
+        if (!noInteractive && !includePreview)
         {
             var choice = await AnsiConsole.PromptAsync(new SelectionPrompt<string>()
                     .Title("[cyan]What would you like to install?[/]")
@@ -89,10 +80,10 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             switch (choice)
             {
                 case "Latest stable":
-                    stable = true;
+                    includePreview = false;
                     break;
                 case "Latest preview":
-                    includePrerelease = true;
+                    includePreview = true;
                     break;
                 case "Pull request":
                     // Fetch and display list of open PRs
@@ -114,9 +105,9 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                     return await InstallPullRequest(selectedPrNumber, cancellationToken);
             }
         }
-        else if (noInteractive && !stable && !includePrerelease)
+        else if (noInteractive && !includePreview)
         {
-            AnsiConsole.MarkupLine("[red]Error: When running in non-interactive mode, you must specify --stable, --prerelease, --version, or --pr.[/]");
+            AnsiConsole.MarkupLine("[red]Error: When running in non-interactive mode, you must specify --preview, --version, or --pr.[/]");
             return 1;
         }
 
@@ -133,7 +124,7 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                 .Spinner(Spinner.Known.Dots)
                 .StartAsync("Checking for updates...", async ctx =>
                 {
-                    return await CheckForUpdates(includePrerelease, cancellationToken);
+                    return await CheckForUpdates(includePreview, cancellationToken);
                 });
 
             var release = releases.FirstOrDefault();
@@ -375,12 +366,55 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
                         }
                     });
 
+                // Extract the downloaded archive
+                var archivePath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? Path.Combine(tempDir, $"{assetName}.zip")
+                    : Path.Combine(tempDir, $"{assetName}.tar.gz");
+
+                if (!File.Exists(archivePath))
+                {
+                    throw new FileNotFoundException($"Downloaded archive not found: {archivePath}");
+                }
+
+                var extractDir = Path.Combine(tempDir, "extracted");
+                Directory.CreateDirectory(extractDir);
+
+                await AnsiConsole.Status()
+                    .Spinner(Spinner.Known.Dots)
+                    .StartAsync("Extracting archive...", async ctx =>
+                    {
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        {
+                            System.IO.Compression.ZipFile.ExtractToDirectory(archivePath, extractDir);
+                        }
+                        else
+                        {
+                            var psi = new ProcessStartInfo
+                            {
+                                FileName = "tar",
+                                Arguments = $"-xzf \"{archivePath}\" -C \"{extractDir}\"",
+                                UseShellExecute = false,
+                                CreateNoWindow = true
+                            };
+
+                            var process = Process.Start(psi);
+                            if (process != null)
+                            {
+                                await process.WaitForExitAsync(cancellationToken);
+                                if (process.ExitCode != 0)
+                                {
+                                    throw new InvalidOperationException("Failed to extract archive");
+                                }
+                            }
+                        }
+                    });
+
                 // Install the downloaded binary
                 var exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                    ? "Reshape.Cli.exe"
-                    : "Reshape.Cli";
+                    ? "reshape.exe"
+                    : "reshape";
 
-                var newExePath = Directory.GetFiles(tempDir, exeName, SearchOption.AllDirectories).FirstOrDefault();
+                var newExePath = Directory.GetFiles(extractDir, exeName, SearchOption.AllDirectories).FirstOrDefault();
                 if (newExePath == null)
                 {
                     throw new FileNotFoundException($"Could not find {exeName} in the downloaded artifact");
@@ -641,8 +675,8 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
 
             // Find the new executable
             var exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? "Reshape.Cli.exe"
-                : "Reshape.Cli";
+                ? "reshape.exe"
+                : "reshape";
 
             var newExePath = Directory.GetFiles(extractDir, exeName, SearchOption.AllDirectories).FirstOrDefault();
             if (newExePath == null)
@@ -660,6 +694,9 @@ internal sealed class UpdateCommand : AsynchronousCommandLineAction
             {
                 // On Windows, we need to handle locked files
                 ReplaceWindowsExecutable(currentExePath, newExePath);
+
+                // Check and add to PATH if needed
+                EnsureInPath(currentExePath);
             }
             else
             {
@@ -722,6 +759,45 @@ del ""%~f0""
             Process.Start(psi);
 
             AnsiConsole.MarkupLine("\n[yellow]Note: The update will complete after this process exits.[/]");
+        }
+    }
+
+    private static void EnsureInPath(string executablePath)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(executablePath);
+            if (string.IsNullOrEmpty(directory))
+                return;
+
+            // Get current user PATH
+            var userPath = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.User) ?? string.Empty;
+
+            // Check if directory is already in PATH (case-insensitive)
+            var pathDirs = userPath.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            var isInPath = pathDirs.Any(p => string.Equals(
+                Path.GetFullPath(p.Trim()),
+                Path.GetFullPath(directory),
+                StringComparison.OrdinalIgnoreCase));
+
+            if (!isInPath)
+            {
+                AnsiConsole.MarkupLine("\n[cyan]Adding installation directory to user PATH...[/]");
+
+                var newPath = string.IsNullOrEmpty(userPath)
+                    ? directory
+                    : $"{userPath.TrimEnd(';')};{directory}";
+
+                Environment.SetEnvironmentVariable("Path", newPath, EnvironmentVariableTarget.User);
+
+                AnsiConsole.MarkupLine($"[green]✓ Added to PATH: {Markup.Escape(directory)}[/]");
+                AnsiConsole.MarkupLine("[yellow]⚠ Please restart your terminal for PATH changes to take effect[/]");
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Warning: Could not add to PATH: {Markup.Escape(ex.Message)}[/]");
+            AnsiConsole.MarkupLine("[dim]You may need to add the installation directory to your PATH manually[/]");
         }
     }
 }

@@ -12,8 +12,19 @@ internal sealed class ListCommand : AsynchronousCommandLineAction
 {
     public override Task<int> InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken = default)
     {
-        var path = parseResult.GetRequiredValue(GlobalOptions.Path);
-        var extensions = parseResult.GetRequiredValue(GlobalOptions.Extension);
+        var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
+
+        var path = parseResult.GetPathOrPrompt();
+
+        var extensions = noInteractive
+            ? parseResult.GetRequiredValue(GlobalOptions.Extension)
+            : [..AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("[yellow]Select file extensions to process:[/]")
+                    .PageSize(15)
+                    .InstructionsText("[grey](Press [blue]<space>[/] to toggle, [green]<enter>[/] to accept)[/]")
+                    .AddChoices(".jpg", ".jpeg", ".png", ".heic", ".gif", ".bmp", ".tiff", ".raw",
+                                ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx"))];
 
         try
         {

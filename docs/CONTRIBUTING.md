@@ -139,18 +139,19 @@ refactor: Extract metadata extraction to separate method
 ## Project Structure
 
 ```
-reshape-cli/
-├── Commands/          # One handler per file
-├── Utilities/         # Helper classes
-├── FileService.cs     # Core business logic
-├── Models.cs          # All data models
-└── AppJsonSerializerContext.cs  # AOT JSON config
+src/
+  reshape-cli/
+  ├── Commands/          # One handler per file
+  ├── Utilities/         # Helper classes
+  ├── FileService.cs     # Core business logic
+  ├── Models.cs          # All data models
+  └── AppJsonSerializerContext.cs  # AOT JSON config
 
-reshape-ui/
-└── src/
-    ├── components/    # Vue components
-    ├── api.ts         # API client
-    └── types.ts       # TypeScript types (mirror Models.cs)
+  reshape-ui/
+  └── src/
+      ├── components/    # Vue components
+      ├── api.ts         # API client
+      └── types.ts       # TypeScript types (mirror Models.cs)
 ```
 
 ## Important Notes
