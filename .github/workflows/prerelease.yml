@@ -32,58 +32,46 @@ jobs:
                   BUILD_NUMBER=$(git rev-list --count HEAD)
                   TIMESTAMP=$(date -u +%Y%m%d.%H%M%S)
                   PRERELEASE_VERSION="${BASE_VERSION}-preview.${BUILD_NUMBER}"
+                  TAG_NAME="v${PRERELEASE_VERSION}"
 
                   echo "prerelease_version=${PRERELEASE_VERSION}" >> $GITHUB_OUTPUT
+                  echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
                   echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
                   echo "build_number=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
                   echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
 
-            - name: Delete existing prerelease
+            - name: Delete existing prerelease tag if exists
               continue-on-error: true
               run: |
-                  git push origin :refs/tags/prerelease || true
-                  gh release delete prerelease --yes || true
+                  TAG_NAME="${{ steps.version.outputs.tag_name }}"
+                  # Delete the tag if it exists (shouldn't happen with unique build numbers, but just in case)
+                  git push origin :refs/tags/${TAG_NAME} || true
+                  gh release delete ${TAG_NAME} --yes || true
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Create Prerelease Tag
               run: |
+                  TAG_NAME="${{ steps.version.outputs.tag_name }}"
+
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
-                  git tag -f prerelease -m "Prerelease ${{ steps.version.outputs.prerelease_version }}"
-                  git push -f origin prerelease
+                  git tag -a "${TAG_NAME}" -m "Prerelease ${{ steps.version.outputs.prerelease_version }}"
+                  git push origin "${TAG_NAME}"
 
-            - name: Create Prerelease
-              uses: softprops/action-gh-release@v1
-              with:
-                  tag_name: prerelease
-                  name: "🚧 Prerelease ${{ steps.version.outputs.prerelease_version }}"
-                  body: |
-                      # 🚧 Automated Prerelease Build
+                  echo "Created tag: ${TAG_NAME}"
+                  echo "The build-and-release workflow will be triggered to build and upload binaries."
 
-                      **Version:** `${{ steps.version.outputs.prerelease_version }}`  
-                      **Commit:** ${{ steps.version.outputs.short_sha }}  
-                      **Build:** #${{ steps.version.outputs.build_number }}
-
-                      ---
-
-                      **⚠️ This is a prerelease build from the main branch. Not recommended for production use.**
-
-                      ```bash
-                      curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.sh | bash -s -- --prerelease
-                      ```
-                      Or
-
-                      Run remotely in PowerShell:
-                      ```powershell
-                      iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.ps1) } -Prerelease"
-                      ```
-
-                      ---
-
-                      *This prerelease is automatically created on every push to main.*
-                  draft: false
-                  prerelease: true
-                  generate_release_notes: false
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Summary
+              run: |
+                  echo "## 🚧 Prerelease Tag Created" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "**Tag:** ${{ steps.version.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+                  echo "**Version:** ${{ steps.version.outputs.prerelease_version }}" >> $GITHUB_STEP_SUMMARY
+                  echo "**Commit:** ${{ steps.version.outputs.short_sha }}" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "The **build-and-release** workflow will automatically:" >> $GITHUB_STEP_SUMMARY
+                  echo "1. Build binaries for Windows, Linux, and macOS" >> $GITHUB_STEP_SUMMARY
+                  echo "2. Create the GitHub release with assets" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "🔗 [View Releases](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY

@@ -8,6 +8,7 @@ set -e
 # Default values
 VERSION="latest"
 INSTALL_DIR="$HOME/.local/bin"
+PREVIEW=false
 
 # Color output
 RED='\033[0;31m'
@@ -42,6 +43,10 @@ while [[ $# -gt 0 ]]; do
         --install-dir)
             INSTALL_DIR="$2"
             shift 2
+            ;;
+        --preview|--prerelease)
+            PREVIEW=true
+            shift
             ;;
         *)
             error "Unknown option: $1"
@@ -89,9 +94,21 @@ API_URL="https://api.github.com/repos/$REPO/releases"
 
 # Fetch release information
 if [ "$VERSION" = "latest" ]; then
-    info "Fetching latest release information..."
-    RELEASE_JSON=$(curl -fsSL "$API_URL/latest" -H "User-Agent: Reshape-Installer")
-    VERSION=$(echo "$RELEASE_JSON" | grep -o '"tag_name": *"[^"]*"' | sed 's/"tag_name": *"\(.*\)"/\1/')
+    if [ "$PREVIEW" = true ]; then
+        info "Fetching latest preview release information..."
+        RELEASE_JSON=$(curl -fsSL "$API_URL" -H "User-Agent: Reshape-Installer")
+        # Find first prerelease
+        RELEASE_JSON=$(echo "$RELEASE_JSON" | python3 -c "import sys, json; releases = json.load(sys.stdin); prereleases = [r for r in releases if r.get('prerelease')]; print(json.dumps(prereleases[0]) if prereleases else '')" 2>/dev/null || echo "")
+        if [ -z "$RELEASE_JSON" ] || [ "$RELEASE_JSON" = "" ]; then
+            warning "No preview release found, falling back to latest stable release"
+            RELEASE_JSON=$(curl -fsSL "$API_URL/latest" -H "User-Agent: Reshape-Installer")
+        fi
+        VERSION=$(echo "$RELEASE_JSON" | grep -o '"tag_name": *"[^"]*"' | head -1 | sed 's/"tag_name": *"\(.*\)"/\1/')
+    else
+        info "Fetching latest release information..."
+        RELEASE_JSON=$(curl -fsSL "$API_URL/latest" -H "User-Agent: Reshape-Installer")
+        VERSION=$(echo "$RELEASE_JSON" | grep -o '"tag_name": *"[^"]*"' | sed 's/"tag_name": *"\(.*\)"/\1/')
+    fi
 else
     info "Fetching release information for $VERSION..."
     RELEASE_JSON=$(curl -fsSL "$API_URL/tags/$VERSION" -H "User-Agent: Reshape-Installer")
@@ -132,7 +149,7 @@ info "Extracting archive..."
 tar -xzf "$ARCHIVE_PATH" -C "$TEMP_DIR"
 
 # Find executable
-EXE_NAME="Reshape.Cli"
+EXE_NAME="reshape"
 EXE_PATH=$(find "$TEMP_DIR" -type f -name "$EXE_NAME" | head -n 1)
 
 if [ -z "$EXE_PATH" ]; then

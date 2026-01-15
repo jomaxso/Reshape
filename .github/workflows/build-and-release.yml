@@ -156,6 +156,16 @@ jobs:
           cp eng/scripts/install.ps1 artifacts/
           cp eng/scripts/install.sh artifacts/
 
+      - name: Determine if prerelease
+        id: prerelease
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [[ "$TAG" == *"preview"* ]] || [[ "$TAG" == *"alpha"* ]] || [[ "$TAG" == *"beta"* ]] || [[ "$TAG" == *"rc"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -166,7 +176,25 @@ jobs:
             artifacts/install.ps1
             artifacts/install.sh
           draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
+          body: |
+            ${{ steps.prerelease.outputs.is_prerelease == 'true' && '# 🚧 Prerelease Build' || format('# Release {0}', github.ref_name) }}
+
+            ${{ steps.prerelease.outputs.is_prerelease == 'true' && '**⚠️ This is a prerelease build. Not recommended for production use.**' || '' }}
+
+            ## Installation
+
+            **Bash (Linux/macOS):**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.sh | bash
+            ```
+
+            **PowerShell (Windows):**
+            ```powershell
+            iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.ps1) }"
+            ```
+
+            Or download the binaries manually below.
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

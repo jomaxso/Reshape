@@ -111,7 +111,7 @@ try {
     }
 
     # Find the executable in the extracted folder
-    $exeName = "Reshape.Cli.exe"
+    $exeName = "reshape.exe"
     $exePath = Get-ChildItem -Path $tempDir -Recurse -Filter $exeName | Select-Object -First 1
 
     if (-not $exePath) {
@@ -165,25 +165,29 @@ try {
                 Write-Warning "⚠ Please restart your terminal for PATH changes to take effect"
                 Write-Info "  Or run this in your current session:"
                 Write-Info "  `$env:PATH += `;$InstallDir"
-            } catch {
+            }
+            catch {
                 Write-Warning "Could not automatically add to PATH: $_"
                 Write-Info "To add it manually, run:"
                 Write-Info "  [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + ';$InstallDir', 'User')"
             }
-        } else {
+        }
+        else {
             Write-Success "`n✓ Installation directory already in user PATH"
         }
         
         # Add to current session PATH
         $env:PATH += "`; $InstallDir"
         Write-Success "`n✓ You can now use the 'reshape' command in this session"
-    } else {
+    }
+    else {
         Write-Success "`n✓ You can now use the 'reshape' command"
     }
     
     Write-Info "Try: reshape --help"
 
-} finally {
+}
+finally {
     # Cleanup
     if (Test-Path $tempDir) {
         Remove-Item $tempDir -Recurse -Force
