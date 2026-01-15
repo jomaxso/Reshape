@@ -46,7 +46,7 @@ npm run build
 
 ```bash
 cd src/reshape-cli
-dotnet run -- serve
+dotnet run -- run
 ```
 
 Open `http://localhost:5000` in your browser.
@@ -99,13 +99,13 @@ Reshape/
 cd reshape-cli
 
 # Run in development mode
-dotnet run -- list "C:\TestFolder" --ext .jpg
+dotnet run -- file list --path "C:\TestFolder" --ext .jpg
 
 # Run web server
-dotnet run -- serve
+dotnet run -- run
 
 # Watch mode (auto-restart on changes)
-dotnet watch run -- serve
+dotnet watch run -- run
 ```
 
 ### UI Development
@@ -128,7 +128,7 @@ This runs the Vue app at `http://localhost:5173` with hot module replacement.
 Terminal 1 - Backend:
 ```bash
 cd reshape-cli
-dotnet watch run -- serve
+dotnet watch run -- run
 ```
 
 Terminal 2 - Frontend (optional, for hot reload):
@@ -273,12 +273,12 @@ new("{my_field}_{filename}", "Description of pattern"),
 
 ```bash
 # Test CLI commands
-dotnet run -- list "C:\TestPhotos" --ext .jpg
-dotnet run -- preview "C:\TestPhotos" --pattern "{year}_{filename}"
-dotnet run -- rename "C:\TestPhotos" --pattern "{year}_{filename}" --dry-run
+dotnet run -- file list --path "C:\TestPhotos" --ext .jpg
+dotnet run -- file preview --path "C:\TestPhotos" --pattern "{year}_{filename}"
+dotnet run -- file rename --path "C:\TestPhotos" --pattern "{year}_{filename}" --no-interactive
 
 # Test Web UI
-dotnet run -- serve
+dotnet run -- run
 # Then open http://localhost:5000 and test manually
 ```
 

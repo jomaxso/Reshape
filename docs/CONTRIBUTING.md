@@ -59,7 +59,7 @@ npm run build
 
 # Run
 cd ../reshape-cli
-dotnet run -- serve
+dotnet run -- run
 ```
 
 ## Pull Request Process
