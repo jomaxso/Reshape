@@ -6,7 +6,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Vue 3](https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vuedotjs)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENCE.txt)
 
 ## ✨ Features
 
@@ -283,7 +283,11 @@ Tag 3/
 Reshape/
 ├── src/
 │   ├── reshape-cli/           # .NET 10 CLI with embedded web server
-│   │   ├── Commands/          # CLI command handlers
+│   │   ├── Commands/          # CLI commands
+│   │   │   ├── Files/         # File operation commands (list, preview, rename)
+│   │   │   ├── Patterns/      # Pattern-related commands
+│   │   │   ├── RunCommand.cs  # Web server command (serve)
+│   │   │   └── UpdateCommand.cs # Self-update command
 │   │   ├── Utilities/         # Helper classes
 │   │   ├── wwwroot/           # Compiled Vue app (auto-generated)
 │   │   ├── Program.cs         # Entry point
@@ -303,7 +307,8 @@ Reshape/
 │       ├── Services/          # Service tests
 │       └── Utilities/         # Utility tests
 │
-└── docs/                  # Documentation
+├── docs/                      # Documentation
+└── eng/                       # Build and versioning configuration
 ```
 
 ### Development Workflow
@@ -416,7 +421,7 @@ Please read our [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENCE.txt](LICENCE.txt) file for details.
 
 ## � Versioning
 
