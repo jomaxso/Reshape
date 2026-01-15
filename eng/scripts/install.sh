@@ -101,12 +101,19 @@ if [ "$VERSION" = "latest" ]; then
         RELEASE_JSON=$(echo "$RELEASE_JSON" | python3 -c "import sys, json; releases = json.load(sys.stdin); prereleases = [r for r in releases if r.get('prerelease')]; print(json.dumps(prereleases[0]) if prereleases else '')" 2>/dev/null || echo "")
         if [ -z "$RELEASE_JSON" ] || [ "$RELEASE_JSON" = "" ]; then
             warning "No preview release found, falling back to latest stable release"
-            RELEASE_JSON=$(curl -fsSL "$API_URL/latest" -H "User-Agent: Reshape-Installer")
+            RELEASE_JSON=$(curl -fsSL "$API_URL/latest" -H "User-Agent: Reshape-Installer" 2>/dev/null)
         fi
         VERSION=$(echo "$RELEASE_JSON" | grep -o '"tag_name": *"[^"]*"' | head -1 | sed 's/"tag_name": *"\(.*\)"/\1/')
     else
         info "Fetching latest release information..."
-        RELEASE_JSON=$(curl -fsSL "$API_URL/latest" -H "User-Agent: Reshape-Installer")
+        HTTP_CODE=$(curl -sL -w "%{http_code}" "$API_URL/latest" -H "User-Agent: Reshape-Installer" -o /tmp/reshape_release.json)
+        if [ "$HTTP_CODE" = "404" ]; then
+            error "No releases found in the repository."
+            info "Please create a release first using the GitHub Actions release workflow,"
+            info "or specify a version explicitly with: --version v0.1.0"
+            exit 1
+        fi
+        RELEASE_JSON=$(cat /tmp/reshape_release.json)
         VERSION=$(echo "$RELEASE_JSON" | grep -o '"tag_name": *"[^"]*"' | sed 's/"tag_name": *"\(.*\)"/\1/')
     fi
 else
