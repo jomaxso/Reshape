@@ -1,14 +1,14 @@
-name: Create Stable Release
+name: Create Release
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (leave empty to use version from .csproj)"
+        description: "Base version (e.g., 0.1.0) - leave empty to use version from Versions.props"
         required: false
         type: string
       prerelease:
-        description: "Mark as prerelease"
+        description: "Create as prerelease (adds suffix from Versions.props)"
         required: false
         type: boolean
         default: false
@@ -29,35 +29,50 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
 
       - name: Get Version
         id: version
         run: |
+          # Get base version
           if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-            echo "Using manual version: ${VERSION}"
+            BASE_VERSION="${{ github.event.inputs.version }}"
+            echo "Using manual base version: ${BASE_VERSION}"
           else
-            # Read version from eng/Versions.props
+            # Read base version from eng/Versions.props
             MAJOR=$(grep -oP '<MajorVersion>\K[^<]+' eng/Versions.props)
             MINOR=$(grep -oP '<MinorVersion>\K[^<]+' eng/Versions.props)
             PATCH=$(grep -oP '<PatchVersion>\K[^<]+' eng/Versions.props)
-            PRERELEASE=$(grep -oP '<PreReleaseVersionLabel>\K[^<]+' eng/Versions.props)
-            
-            VERSION="${MAJOR}.${MINOR}.${PATCH}"
-            if [ -n "$PRERELEASE" ]; then
-              VERSION="${VERSION}-${PRERELEASE}"
+            BASE_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            echo "Using base version from Versions.props: ${BASE_VERSION}"
+          fi
+
+          # Add prerelease suffix if requested
+          if [ "${{ github.event.inputs.prerelease }}" == "true" ]; then
+            PRERELEASE_SUFFIX=$(grep -oP '<PreReleaseVersionLabel>\K[^<]+' eng/Versions.props || echo "")
+            if [ -n "$PRERELEASE_SUFFIX" ]; then
+              VERSION="${BASE_VERSION}-${PRERELEASE_SUFFIX}"
+              echo "Creating prerelease: v${VERSION}"
+            else
+              echo "::error::Prerelease requested but no PreReleaseVersionLabel found in Versions.props"
+              exit 1
             fi
-            
-            echo "Using version from eng/Versions.props: ${VERSION}"
+          else
+            VERSION="${BASE_VERSION}"
+            echo "Creating stable release: v${VERSION}"
           fi
 
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-          # Check if tag already exists
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
           if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
-            echo "::error::Tag v${VERSION} already exists!"
+            echo "::error::Tag v${VERSION} already exists! Use a different version or delete the existing tag."
             exit 1
           fi
+          echo "Tag v${VERSION} does not exist, proceeding..."
 
       - name: Create Release Tag
         run: |
@@ -119,6 +134,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
+          name: v${{ needs.prepare.outputs.version }}
           files: |
             artifacts/reshape-win-x64/*
             artifacts/reshape-linux-x64/*
@@ -151,9 +167,12 @@ jobs:
 
       - name: Summary
         run: |
+          IS_PRERELEASE="${{ steps.prerelease.outputs.is_prerelease }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+
           echo "## ✅ Release Created" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** v${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Prerelease:** ${{ steps.prerelease.outputs.is_prerelease }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${VERSION}" >> $GITHUB_STEP_SUMMARY
+          echo "**Prerelease:** ${IS_PRERELEASE}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.prepare.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/v${VERSION})" >> $GITHUB_STEP_SUMMARY
