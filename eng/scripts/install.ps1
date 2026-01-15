@@ -164,7 +164,7 @@ try {
                 Write-Info ""
                 Write-Warning "⚠ Please restart your terminal for PATH changes to take effect"
                 Write-Info "  Or run this in your current session:"
-                Write-Info "  `$env:PATH += `;$InstallDir`"
+                Write-Info "  `$env:PATH += `;$InstallDir"
             } catch {
                 Write-Warning "Could not automatically add to PATH: $_"
                 Write-Info "To add it manually, run:"
@@ -175,7 +175,7 @@ try {
         }
         
         # Add to current session PATH
-        $env:PATH += "; $InstallDir"
+        $env:PATH += "`; $InstallDir"
         Write-Success "`n✓ You can now use the 'reshape' command in this session"
     } else {
         Write-Success "`n✓ You can now use the 'reshape' command"
