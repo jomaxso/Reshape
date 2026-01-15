@@ -12,5 +12,12 @@
     <PackageVersion Include="System.CommandLine" Version="$(SystemCommandLineVersion)" />
     <PackageVersion Include="MetadataExtractor" Version="$(MetadataExtractorVersion)" />
     <PackageVersion Include="TimeZoneConverter" Version="$(TimeZoneConverterVersion)" />
+    
+    <!-- Test Dependencies -->
+    <PackageVersion Include="xunit" Version="$(XunitVersion)" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkVersion)" />
+    <PackageVersion Include="coverlet.collector" Version="$(CoverletCollectorVersion)" />
+    <PackageVersion Include="Shouldly" Version="$(ShouldlyVersion)" />
   </ItemGroup>
 </Project>
