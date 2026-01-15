@@ -6,7 +6,7 @@ namespace Reshape.Cli.Tests.Services;
 /// <summary>
 /// Tests for FileService static class.
 /// </summary>
-public class FileServiceTests
+public class FileServiceTests : IDisposable
 {
     private readonly string _testDataPath;
 
@@ -14,6 +14,22 @@ public class FileServiceTests
     {
         _testDataPath = Path.Combine(Path.GetTempPath(), "ReshapeTests", Guid.NewGuid().ToString());
         Directory.CreateDirectory(_testDataPath);
+    }
+
+    public void Dispose()
+    {
+        // Clean up test directory and files
+        if (Directory.Exists(_testDataPath))
+        {
+            try
+            {
+                Directory.Delete(_testDataPath, recursive: true);
+            }
+            catch
+            {
+                // Ignore cleanup errors in tests
+            }
+        }
     }
 
     [Fact]

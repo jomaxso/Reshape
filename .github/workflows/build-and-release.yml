@@ -76,16 +76,17 @@ jobs:
         run: |
           # Extract coverage percentage from Cobertura report
           coverage=$(grep -oP 'line-rate="\K[0-9.]+' ./coverage-report/Cobertura.xml | head -1)
-          coverage_percent=$(echo "$coverage * 100" | bc)
+          coverage_percent=$(awk "BEGIN {printf \"%.2f\", $coverage * 100}")
           echo "Line Coverage: $coverage_percent%"
           
           # Require minimum 19% coverage (can be increased over time)
           # Excludes auto-generated files via coverlet.runsettings
-          if (( $(echo "$coverage_percent < 19" | bc -l) )); then
-            echo "❌ Coverage $coverage_percent% is below the 19% threshold"
+          threshold=19
+          if (( $(awk "BEGIN {print ($coverage_percent < $threshold)}") )); then
+            echo "❌ Coverage $coverage_percent% is below the ${threshold}% threshold"
             exit 1
           else
-            echo "✅ Coverage $coverage_percent% meets the 19% threshold"
+            echo "✅ Coverage $coverage_percent% meets the ${threshold}% threshold"
           fi
 
       - name: Upload test results
