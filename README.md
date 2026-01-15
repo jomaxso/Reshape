@@ -2,6 +2,7 @@
 
 > **Batch rename files using metadata patterns** - A powerful dual-mode file renaming tool with both CLI and Web UI.
 
+[![Release](https://github.com/jomaxso/Reshape/actions/workflows/release.yml/badge.svg?branch=main&event=release)](https://github.com/jomaxso/Reshape/actions/workflows/release.yml)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Vue 3](https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vuedotjs)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)](https://www.typescriptlang.org/)
