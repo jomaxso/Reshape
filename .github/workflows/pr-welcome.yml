@@ -1,0 +1,54 @@
+name: Welcome New PR
+
+on:
+    pull_request:
+        types: [opened]
+        branches:
+            - main
+
+permissions:
+    pull-requests: write
+    contents: read
+
+jobs:
+    welcome:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Post Welcome Message
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const prNumber = context.payload.pull_request.number;
+                      const author = context.payload.pull_request.user.login;
+
+                      const body = `## 👋 Welcome to Reshape!
+
+                      Thank you @${author} for opening this pull request! 🎉
+
+                      We appreciate your contribution to the project. A maintainer will review your changes soon.
+
+                      ### What happens next?
+
+                      - ✅ Automated checks will run to validate your changes
+                      - 📦 Build artifacts will be created for testing
+                      - 💬 You'll receive installation instructions in a follow-up comment
+                      - 👀 A maintainer will review your code
+
+                      Feel free to ask questions or request help in the comments below!
+
+                      <!-- pr-welcome-message -->
+                      `;
+
+                      try {
+                        await github.rest.issues.createComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: prNumber,
+                          body: body
+                        });
+                        console.log('Welcome message posted successfully');
+                      } catch (error) {
+                        console.error('Failed to post welcome message:', error);
+                        throw error;
+                      }
