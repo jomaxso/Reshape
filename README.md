@@ -296,6 +296,12 @@ Reshape/
 │       │   └── types.ts       # TypeScript types
 │       └── vite.config.ts     # Build configuration
 │
+├── tests/
+│   └── Reshape.Cli.Tests/    # xUnit test project
+│       ├── Models/            # Model tests
+│       ├── Services/          # Service tests
+│       └── Utilities/         # Utility tests
+│
 └── docs/                  # Documentation
 ```
 
@@ -310,6 +316,58 @@ dotnet watch run -- serve
 cd src/reshape-ui
 npm run dev
 ```
+
+### Testing
+
+The project uses **xUnit** with **Shouldly** assertions following the **Arrange // Act // Assert** pattern.
+
+#### Running Tests
+
+```powershell
+# Run all tests
+dotnet test
+
+# Run tests with coverage
+dotnet test --collect:"XPlat Code Coverage"
+
+# Run tests in watch mode
+dotnet watch test
+```
+
+#### Writing Tests
+
+All tests follow the Arrange // Act // Assert pattern:
+
+```csharp
+[Fact]
+public void FormatSize_ShouldFormatBytesCorrectly()
+{
+    // Arrange
+    long bytes = 1024;
+
+    // Act
+    var result = FormatHelper.FormatSize(bytes);
+
+    // Assert
+    result.ShouldBe("1 KB");
+}
+```
+
+#### Coverage Requirements
+
+- Minimum coverage: **19%** (excluding auto-generated code)
+- CI pipeline enforces coverage threshold
+- Coverage reports are generated for all PRs
+- Auto-generated files (JSON serialization context) are excluded from coverage
+- Target: Increase coverage over time as more tests are added
+
+#### Test Structure
+
+- `Models/` - Tests for data models and records
+- `Services/` - Tests for FileService and business logic
+- `Utilities/` - Tests for helper classes
+- Follow xUnit naming conventions
+- Use Shouldly for fluent assertions
 
 ### Building for Production
 
