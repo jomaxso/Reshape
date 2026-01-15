@@ -2,10 +2,12 @@
 # Reshape CLI Installation Script for Windows/PowerShell
 # Usage: iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) }"
 # Or with version: iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) } -Version v0.1.0"
+# Or preview: iex "& { $(irm https://raw.githubusercontent.com/jomaxso/Reshape/main/eng/scripts/install.ps1) } -Preview"
 
 param(
     [string]$Version = "latest",
-    [string]$InstallDir = "$env:USERPROFILE\.reshape\bin"
+    [string]$InstallDir = "$env:USERPROFILE\.reshape\bin",
+    [switch]$Preview
 )
 
 $ErrorActionPreference = "Stop"
@@ -45,8 +47,19 @@ $apiUrl = "https://api.github.com/repos/$repo/releases"
 
 try {
     if ($Version -eq "latest") {
-        Write-Info "Fetching latest release information..."
-        $release = Invoke-RestMethod -Uri "$apiUrl/latest" -Headers @{"User-Agent" = "Reshape-Installer" }
+        if ($Preview) {
+            Write-Info "Fetching latest preview information..."
+            $releases = Invoke-RestMethod -Uri $apiUrl -Headers @{"User-Agent" = "Reshape-Installer" }
+            $release = $releases | Where-Object { $_.prerelease -eq $true } | Select-Object -First 1
+            if (-not $release) {
+                Write-Warning "No preview found, falling back to latest stable release"
+                $release = Invoke-RestMethod -Uri "$apiUrl/latest" -Headers @{"User-Agent" = "Reshape-Installer" }
+            }
+        }
+        else {
+            Write-Info "Fetching latest release information..."
+            $release = Invoke-RestMethod -Uri "$apiUrl/latest" -Headers @{"User-Agent" = "Reshape-Installer" }
+        }
         $Version = $release.tag_name
     }
     else {
