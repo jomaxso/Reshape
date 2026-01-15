@@ -168,7 +168,8 @@ try {
             } catch {
                 Write-Warning "Could not automatically add to PATH: $_"
                 Write-Info "To add it manually, run:"
-                Write-Info "  [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + ';$InstallDir', 'User')"
+                $setEnvCmd = "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + ';`$InstallDir', 'User')"
+                Write-Info "  $setEnvCmd"
             }
         } else {
             Write-Success "`n✓ Installation directory already in user PATH"
