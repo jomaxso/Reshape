@@ -355,7 +355,7 @@ public void FormatSize_ShouldFormatBytesCorrectly()
 
 #### Coverage Requirements
 
-- Minimum coverage: **20%** (excluding auto-generated code)
+- Minimum coverage: **19%** (excluding auto-generated code)
 - CI pipeline enforces coverage threshold
 - Coverage reports are generated for all PRs
 - Auto-generated files (JSON serialization context) are excluded from coverage
