@@ -58,7 +58,18 @@ try {
         }
         else {
             Write-Info "Fetching latest release information..."
-            $release = Invoke-RestMethod -Uri "$apiUrl/latest" -Headers @{"User-Agent" = "Reshape-Installer" }
+            try {
+                $release = Invoke-RestMethod -Uri "$apiUrl/latest" -Headers @{"User-Agent" = "Reshape-Installer" }
+            }
+            catch {
+                if ($_.Exception.Response.StatusCode -eq 404) {
+                    Write-Error "No releases found in the repository."
+                    Write-Info "Please create a release first using the GitHub Actions release workflow,"
+                    Write-Info "or specify a version explicitly with: -Version v0.1.0"
+                    exit 1
+                }
+                throw
+            }
         }
         $Version = $release.tag_name
     }
