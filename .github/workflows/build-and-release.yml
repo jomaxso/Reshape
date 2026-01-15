@@ -44,9 +44,69 @@ jobs:
           path: src/reshape-cli/wwwroot/
           retention-days: 1
 
+  test:
+    name: Run Tests & Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore -c Release
+
+      - name: Run tests with coverage
+        run: dotnet test --no-build -c Release --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory ./test-results --logger "trx;LogFileName=test-results.trx"
+
+      - name: Generate coverage report
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          reportgenerator -reports:./test-results/**/coverage.cobertura.xml -targetdir:./coverage-report -reporttypes:"Html;Cobertura;lcov"
+
+      - name: Check coverage threshold
+        run: |
+          # Extract coverage percentage from Cobertura report
+          coverage=$(grep -oP 'line-rate="\K[0-9.]+' ./coverage-report/Cobertura.xml | head -1)
+          coverage_percent=$(echo "$coverage * 100" | bc)
+          echo "Line Coverage: $coverage_percent%"
+          
+          # Require minimum 20% coverage (can be increased over time)
+          # Excludes auto-generated files via coverlet.runsettings
+          if (( $(echo "$coverage_percent < 20" | bc -l) )); then
+            echo "❌ Coverage $coverage_percent% is below the 20% threshold"
+            exit 1
+          else
+            echo "✅ Coverage $coverage_percent% meets the 20% threshold"
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./test-results/
+          retention-days: 7
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./coverage-report/
+          retention-days: 7
+
   build:
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
-    needs: build-ui
+    needs: [build-ui, test]
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read

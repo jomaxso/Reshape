@@ -220,6 +220,150 @@ public class FileServiceTests
         metadata.ShouldContainKey("day");
     }
 
+    [Fact]
+    public void GeneratePreview_ShouldCreatePreviewItems()
+    {
+        // Arrange
+        CreateTestFile("photo1.jpg");
+        CreateTestFile("photo2.jpg");
+        var pattern = "{filename}_renamed";
+
+        // Act
+        var preview = FileService.GeneratePreview(_testDataPath, pattern, [".jpg"]);
+
+        // Assert
+        preview.ShouldNotBeNull();
+        preview.Length.ShouldBe(2);
+        preview.ShouldAllBe(p => p.NewName.Contains("_renamed"));
+    }
+
+    [Fact]
+    public void GeneratePreview_ShouldDetectConflicts()
+    {
+        // Arrange
+        CreateTestFile("photo1.jpg");
+        CreateTestFile("photo2.jpg");
+        // Pattern that will create same name for all files
+        var pattern = "samename";
+
+        // Act
+        var preview = FileService.GeneratePreview(_testDataPath, pattern, [".jpg"]);
+
+        // Assert
+        preview.ShouldNotBeNull();
+        preview.ShouldContain(p => p.HasConflict);
+    }
+
+    [Fact]
+    public void GeneratePreview_ShouldHandleCounterPlaceholder()
+    {
+        // Arrange
+        CreateTestFile("photo1.jpg");
+        CreateTestFile("photo2.jpg");
+        CreateTestFile("photo3.jpg");
+        var pattern = "IMG_{counter:4}";
+
+        // Act
+        var preview = FileService.GeneratePreview(_testDataPath, pattern, [".jpg"]);
+
+        // Assert
+        preview.ShouldNotBeNull();
+        preview.Length.ShouldBe(3);
+        preview[0].NewName.ShouldContain("0001");
+        preview[1].NewName.ShouldContain("0002");
+        preview[2].NewName.ShouldContain("0003");
+    }
+
+    [Fact]
+    public void ExecuteRename_ShouldReturnResults_WhenDryRun()
+    {
+        // Arrange
+        var filePath = CreateTestFile("original.txt");
+        var items = new[]
+        {
+            new RenamePreviewItem(
+                OriginalName: "original.txt",
+                NewName: "renamed.txt",
+                FullPath: filePath,
+                RelativePath: "",
+                HasConflict: false,
+                IsSelected: true
+            )
+        };
+
+        // Act
+        var results = FileService.ExecuteRename(items, _testDataPath, dryRun: true);
+
+        // Assert
+        results.ShouldNotBeNull();
+        results.Length.ShouldBe(1);
+        results[0].Success.ShouldBeTrue();
+        File.Exists(filePath).ShouldBeTrue(); // Original file should still exist in dry run
+    }
+
+    [Fact]
+    public void ExecuteRename_ShouldRenameFiles_WhenNotDryRun()
+    {
+        // Arrange
+        var originalPath = CreateTestFile("original.txt");
+        var newPath = Path.Combine(_testDataPath, "renamed.txt");
+        var items = new[]
+        {
+            new RenamePreviewItem(
+                OriginalName: "original.txt",
+                NewName: "renamed.txt",
+                FullPath: originalPath,
+                RelativePath: "",
+                HasConflict: false,
+                IsSelected: true
+            )
+        };
+
+        // Act
+        var results = FileService.ExecuteRename(items, _testDataPath, dryRun: false);
+
+        // Assert
+        results.ShouldNotBeNull();
+        results.Length.ShouldBe(1);
+        results[0].Success.ShouldBeTrue();
+        File.Exists(originalPath).ShouldBeFalse(); // Original should be gone
+        File.Exists(newPath).ShouldBeTrue(); // New file should exist
+    }
+
+    [Fact]
+    public void SanitizeForPath_ShouldPreservePathStructure()
+    {
+        // Arrange
+        var path = "2024/01/photos";
+
+        // Act
+        var result = FileService.SanitizeForPath(path);
+
+        // Assert
+        result.ShouldNotBeNullOrEmpty();
+        result.ShouldContain(Path.DirectorySeparatorChar);
+    }
+
+    [Fact]
+    public void ApplyPattern_ShouldHandleMissingMetadata()
+    {
+        // Arrange
+        var pattern = "{year}-{missing_key}_{filename}";
+        var metadata = new Dictionary<string, string>
+        {
+            ["year"] = "2024",
+            ["filename"] = "photo"
+        };
+
+        // Act
+        var result = FileService.ApplyPattern(pattern, metadata);
+
+        // Assert
+        result.ShouldNotBeNullOrEmpty();
+        result.ShouldContain("2024");
+        result.ShouldContain("photo");
+    }
+
     private string CreateTestFile(string fileName, string content = "test content")
     {
         var filePath = Path.Combine(_testDataPath, fileName);
