@@ -13,10 +13,37 @@ internal sealed class RenameCommand : AsynchronousCommandLineAction
     {
         await Task.Yield();
 
+        var path = parseResult.GetPathOrPrompt();
+
         var noInteractive = parseResult.GetValue(GlobalOptions.NoInteractive);
-        var path = parseResult.GetRequiredValue(GlobalOptions.Path);
         var pattern = parseResult.GetValue(GlobalOptions.Pattern);
         var extensions = parseResult.GetValue(GlobalOptions.Extension);
+
+        if (noInteractive && string.IsNullOrEmpty(pattern))
+        {
+            AnsiConsole.MarkupLine("[red]Error: --pattern is required in non-interactive mode[/]");
+            return 1;
+        }
+
+        if (!noInteractive)
+        {
+            var patternChoices = FileService.GetPatternTemplates()
+                .Select(p => $"{p.Pattern} - {p.Description}")
+                .Append("Custom pattern")
+                .ToArray();
+
+            var selectedPattern = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[cyan]Select a pattern:[/]")
+                    .PageSize(15)
+                    .AddChoices(patternChoices));
+
+            pattern = selectedPattern switch
+            {
+                "Custom pattern" => AnsiConsole.Ask<string>("[cyan]Enter custom pattern:[/]"),
+                _ => selectedPattern.Split(" - ")[0]
+            };
+        }
 
         try
         {
@@ -130,9 +157,9 @@ internal sealed class RenameCommand : AsynchronousCommandLineAction
         var choice = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title($"[yellow]Proceed with renaming {filesToRename} file(s)?[/]")
-                .AddChoices("Yes, continue", "No, abort"));
+                .AddChoices("Yes", "No"));
 
-        return choice == "Yes, continue";
+        return choice == "Yes";
     }
 
     private static void DisplayResults(RenameResult[] results)

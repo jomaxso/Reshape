@@ -37,8 +37,11 @@ internal sealed class FileCommand : AsynchronousCommandLineAction
             _ => null
         };
 
-        return command is null
-            ? 0
-            : await command.InvokeAsync(parseResult, cancellationToken);
+        if (command is null)
+        {
+            return 1;
+        }
+
+        return await command.InvokeAsync(parseResult, cancellationToken);
     }
 }
