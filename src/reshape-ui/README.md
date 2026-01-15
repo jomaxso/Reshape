@@ -50,7 +50,7 @@ The dev server runs at `http://localhost:5173` with hot module replacement.
 
 ```bash
 cd ../reshape-cli
-dotnet run -- serve
+dotnet run -- run
 ```
 
 ### Building for Production
