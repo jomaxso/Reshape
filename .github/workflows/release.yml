@@ -15,10 +15,14 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
-  release:
+  prepare:
+    name: Prepare Release
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout
@@ -68,38 +72,79 @@ jobs:
 
           echo "Created and pushed tag v${VERSION}"
 
-      - name: Wait for Tag Push
-        run: sleep 5
+  build:
+    name: Build Binaries
+    needs: prepare
+    uses: ./.github/workflows/build-and-release.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
 
-      - name: Create GitHub Release
+  release:
+    name: Upload Release Assets
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4.1.3
+        with:
+          path: artifacts/
+
+      - name: Display structure
+        run: ls -R artifacts/
+
+      - name: Copy installation scripts
+        run: |
+          cp eng/scripts/install.ps1 artifacts/
+          cp eng/scripts/install.sh artifacts/
+
+      - name: Determine if prerelease
+        id: prerelease
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          if [[ "$VERSION" == *"preview"* ]] || [[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"rc"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.prerelease }}" == "true" ]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Assets to Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
+          tag_name: v${{ needs.prepare.outputs.version }}
+          files: |
+            artifacts/reshape-win-x64/*
+            artifacts/reshape-linux-x64/*
+            artifacts/reshape-osx-arm64/*
+            artifacts/install.ps1
+            artifacts/install.sh
+          draft: false
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease == 'true' }}
           body: |
-            # Release v${{ steps.version.outputs.version }}
+            ${{ steps.prerelease.outputs.is_prerelease == 'true' && '# 🚧 Prerelease Build' || format('# Release v{0}', needs.prepare.outputs.version) }}
 
+            ${{ steps.prerelease.outputs.is_prerelease == 'true' && '**⚠️ This is a prerelease build. Not recommended for production use.**' || '' }}
+
+            ## Installation
+
+            **Bash (Linux/macOS):**
             ```bash
             curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.sh | bash
             ```
-            Or
 
-            Run remotely in PowerShell:
+            **PowerShell (Windows):**
             ```powershell
             iex "& { $(irm https://raw.githubusercontent.com/${{ github.repository }}/main/eng/scripts/install.ps1) }"
             ```
 
             Or download the binaries manually below.
-
-            ## What's Changed
-
-            _Release notes will be generated automatically._
-
-            ---
-
-            **Full Changelog**: https://github.com/${{ github.repository }}/commits/v${{ steps.version.outputs.version }}
-          draft: false
-          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -108,9 +153,7 @@ jobs:
         run: |
           echo "## ✅ Release Created" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Prerelease:** ${{ github.event.inputs.prerelease }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Prerelease:** ${{ steps.prerelease.outputs.is_prerelease }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The build-and-release workflow will automatically build and upload binaries." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.prepare.outputs.version }})" >> $GITHUB_STEP_SUMMARY
