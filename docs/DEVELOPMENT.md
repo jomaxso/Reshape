@@ -46,7 +46,7 @@ npm run build
 
 ```bash
 cd src/reshape-cli
-dotnet run -- serve
+dotnet run -- run
 ```
 
 Open `http://localhost:5000` in your browser.
@@ -61,11 +61,17 @@ Open `http://localhost:5000` in your browser.
 Reshape/
 ├── src/
 │   ├── reshape-cli/           # .NET Backend + CLI
-│   │   ├── Commands/          # Command handlers
+│   │   ├── Commands/          # Command organization
+│   │   │   ├── Files/         # File operation commands
+│   │   │   ├── Patterns/      # Pattern commands
+│   │   │   ├── RunCommand.cs  # Web server
+│   │   │   └── UpdateCommand.cs # Self-update
 │   │   ├── Utilities/         # Helper classes
+│   │   ├── Options/           # CLI options
 │   │   ├── wwwroot/           # Compiled Vue app
 │   │   ├── Program.cs         # CLI entry point
 │   │   ├── FileService.cs     # Core business logic
+│   │   ├── ConfigurationService.cs # Configuration
 │   │   ├── Models.cs          # Data models
 │   │   └── AppJsonSerializerContext.cs  # AOT JSON config
 │   │
@@ -93,13 +99,13 @@ Reshape/
 cd reshape-cli
 
 # Run in development mode
-dotnet run -- list "C:\TestFolder" --ext .jpg
+dotnet run -- file list --path "C:\TestFolder" --ext .jpg
 
 # Run web server
-dotnet run -- serve
+dotnet run -- run
 
 # Watch mode (auto-restart on changes)
-dotnet watch run -- serve
+dotnet watch run -- run
 ```
 
 ### UI Development
@@ -122,7 +128,7 @@ This runs the Vue app at `http://localhost:5173` with hot module replacement.
 Terminal 1 - Backend:
 ```bash
 cd reshape-cli
-dotnet watch run -- serve
+dotnet watch run -- run
 ```
 
 Terminal 2 - Frontend (optional, for hot reload):
@@ -137,52 +143,53 @@ npm run dev
 
 ### Adding a New CLI Command
 
-1. **Create the handler** in `src/reshape-cli/Commands/`:
+1. **Create the command** in `src/reshape-cli/Commands/Files/` or `Commands/Patterns/`:
 
 ```csharp
-namespace Reshape.Cli.Commands;
+namespace Reshape.Cli.Commands.Files;
 
-internal static class MyCommandHandler
+internal static class MyCommand
 {
-    public static int Execute(string param1, bool flag1)
+    public static Command Create()
     {
-        try
+        var command = new Command("mycommand", "Description of my command");
+        
+        var param1Arg = new Argument<string>("param1", "Parameter description");
+        var flag1Option = new Option<bool>("--flag1", "Flag description");
+        
+        command.AddArgument(param1Arg);
+        command.AddOption(flag1Option);
+        
+        command.SetHandler((string param1, bool flag1) =>
         {
-            // Your logic here
-            AnsiConsole.MarkupLine("[green]Success![/]");
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
-            return 1;
-        }
+            try
+            {
+                // Your logic here
+                AnsiConsole.MarkupLine("[green]Success![/]");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+                return 1;
+            }
+        }, param1Arg, flag1Option);
+        
+        return command;
     }
 }
 ```
 
-2. **Register the command** in `Program.cs`:
+2. **Register the command** in `Program.cs` or the appropriate parent command:
 
 ```csharp
-var myCommand = new Command("mycommand", "Description of my command");
-var myArg = new Argument<string>("param1") { Description = "Parameter description" };
-var myFlag = new Option<bool>("--flag1") { Description = "Flag description" };
-
-myCommand.Add(myArg);
-myCommand.Add(myFlag);
-myCommand.SetAction(input =>
-{
-    var param1 = input.GetRequiredValue(myArg);
-    var flag1 = input.GetValue(myFlag);
-    return MyCommandHandler.Execute(param1, flag1);
-});
-
-rootCommand.Subcommands.Add(myCommand);
+var myCommand = MyCommand.Create();
+rootCommand.AddCommand(myCommand);
 ```
 
 ### Adding a New API Endpoint
 
-1. **Add to `ServeCommandHandler.cs`**:
+1. **Add to `RunCommand.cs`** in the `ConfigureApiEndpoints` method:
 
 ```csharp
 api.MapPost("/myendpoint", (MyRequest request) =>
@@ -266,12 +273,12 @@ new("{my_field}_{filename}", "Description of pattern"),
 
 ```bash
 # Test CLI commands
-dotnet run -- list "C:\TestPhotos" --ext .jpg
-dotnet run -- preview "C:\TestPhotos" --pattern "{year}_{filename}"
-dotnet run -- rename "C:\TestPhotos" --pattern "{year}_{filename}" --dry-run
+dotnet run -- file list --path "C:\TestPhotos" --ext .jpg
+dotnet run -- file preview --path "C:\TestPhotos" --pattern "{year}_{filename}"
+dotnet run -- file rename --path "C:\TestPhotos" --pattern "{year}_{filename}" --no-interactive
 
 # Test Web UI
-dotnet run -- serve
+dotnet run -- run
 # Then open http://localhost:5000 and test manually
 ```
 

@@ -1,87 +1,206 @@
-# Reshape CLI - Code-Struktur
+# Reshape CLI - Code Architecture
 
-## Überblick
+## Overview
 
-Der Code wurde refaktoriert, um die **Separation of Concerns** zu verbessern und die Wartbarkeit zu erhöhen. Jeder Command Handler ist nun in einer eigenen Datei organisiert.
+The Reshape CLI is structured to support both command-line and web-based interfaces, with a focus on maintainability, testability, and Native AOT compatibility.
 
-## Projektstruktur
+## Project Structure
 
 ```
 reshape-cli/
-├── Commands/                          # Command Handler (ein Handler pro Datei)
-│   ├── ServeCommandHandler.cs        # 'serve' - Startet die Web UI
-│   ├── ListCommandHandler.cs         # 'list' - Zeigt Dateien an
-│   ├── PreviewCommandHandler.cs      # 'preview' - Vorschau der Umbenennungen
-│   ├── RenameCommandHandler.cs       # 'rename' - Führt Umbenennungen aus
-│   └── PatternsCommandHandler.cs     # 'patterns' - Zeigt verfügbare Muster
+├── Commands/                          # Command organization
+│   ├── Files/                         # File operation commands
+│   │   ├── FileCommand.cs            # Base file command
+│   │   ├── ListCommand.cs            # 'list' - Display files
+│   │   ├── PreviewCommand.cs         # 'preview' - Preview renames
+│   │   └── RenameCommand.cs          # 'rename' - Execute renames
+│   │
+│   ├── Patterns/                      # Pattern-related commands
+│   │   └── PatternCommand.cs         # 'patterns' - Show available patterns
+│   │
+│   ├── ReshapeCliCommand.cs          # Root command definition
+│   ├── RunCommand.cs                 # 'serve' - Web UI server
+│   └── UpdateCommand.cs              # 'update' - Self-update functionality
 │
-├── Utilities/                         # Helper-Klassen
-│   └── FormatHelper.cs               # Formatierungs-Hilfsfunktionen
+├── Utilities/                         # Helper classes
+│   └── FormatHelper.cs               # Formatting utility functions
 │
-├── Program.cs                         # Einstiegspunkt und Command-Konfiguration
-├── FileService.cs                     # Datei-Operationen und Metadaten
-├── Models.cs                          # Datenmodelle (Records)
-└── AppJsonSerializerContext.cs       # JSON-Serialisierung
+├── Options/                           # Command-line option definitions
+│
+├── Program.cs                         # Application entry point
+├── FileService.cs                     # Core file operations and metadata
+├── ConfigurationService.cs            # Configuration management
+├── Models.cs                          # Data models (Records)
+└── AppJsonSerializerContext.cs       # JSON serialization for AOT
 ```
 
-## Vorteile der neuen Struktur
+## Key Design Principles
 
-### 1. **Single Responsibility Principle**
-- Jeder Command Handler hat eine klare, einzelne Verantwortung
-- Einfacher zu testen und zu warten
+### 1. **Separation of Concerns**
+- Commands are organized by functionality (Files, Patterns)
+- Each command has a clear, single responsibility
+- Business logic is centralized in `FileService.cs`
 
-### 2. **Bessere Lesbarkeit**
-- `Program.cs` ist jetzt auf ~80 Zeilen reduziert (vorher ~350 Zeilen)
-- Die Command-Konfiguration ist auf einen Blick erfassbar
-- Implementierungsdetails sind in dedizierte Dateien ausgelagert
+### 2. **Native AOT Compatibility**
+- All JSON types registered in `AppJsonSerializerContext.cs`
+- No reflection-based APIs
+- Source-generated JSON serialization
 
-### 3. **Einfachere Wartung**
-- Änderungen an einem Command betreffen nur eine Datei
-- Keine riesigen Dateien mehr durchsuchen
-- Klare Namenskonventionen
+### 3. **Testability**
+- Command logic separated from CLI infrastructure
+- Core services can be tested independently
+- Clear interfaces between components
 
-### 4. **Erweiterbarkeit**
-- Neue Commands können einfach hinzugefügt werden
-- Copy-Paste-Vorlage bereits vorhanden
-- Konsistente Struktur für alle Handler
+### 4. **Embedded Web Server**
+- ASP.NET Core minimal API for the web UI
+- Vue.js SPA compiled into `wwwroot/`
+- Single executable with embedded assets
 
-## Command Handler Pattern
+## Command Structure
 
-Alle Command Handler folgen einem konsistenten Muster:
+Commands follow a hierarchical structure using System.CommandLine:
+
+```
+reshape
+├── serve           # Start web UI (RunCommand.cs)
+├── list            # List files (ListCommand.cs)
+├── preview         # Preview renames (PreviewCommand.cs)
+├── rename          # Execute renames (RenameCommand.cs)
+├── patterns        # Show patterns (PatternCommand.cs)
+└── update          # Self-update (UpdateCommand.cs)
+```
+
+### Command Pattern
+
+Commands in the Files/ directory extend from a base command pattern and follow this structure:
 
 ```csharp
-namespace Reshape.Cli.Commands;
+namespace Reshape.Cli.Commands.Files;
 
-/// <summary>
-/// Handles the 'command-name' command.
-/// </summary>
-internal static class CommandNameHandler
+internal static class SomeCommand
 {
-    public static int Execute(/* parameter */)
+    public static Command Create()
     {
-        try
+        var command = new Command("command-name", "Description");
+        
+        // Add arguments and options
+        var pathArg = new Argument<string>("path", "Path description");
+        command.AddArgument(pathArg);
+        
+        // Set handler
+        command.SetHandler((string path) =>
         {
-            // Command-Logik hier
-            return 0; // Erfolg
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
-            return 1; // Fehler
-        }
+            try
+            {
+                // Command logic
+                return 0; // Success
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+                return 1; // Error
+            }
+        }, pathArg);
+        
+        return command;
     }
-    
-    // Private Helper-Methoden zur Organisation der Logik
-    private static void HelperMethod() { }
 }
 ```
 
-## Nächste Schritte (optional)
+## Core Components
 
-Mögliche weitere Verbesserungen:
+### FileService.cs
+Central service for all file operations:
+- Metadata extraction (EXIF, file system)
+- Pattern-based renaming
+- File scanning and filtering
+- Vacation mode logic
+- GPS and timezone handling
 
-1. **Unit Tests** für jeden Command Handler hinzufügen
-2. **Dependency Injection** für FileService einführen
-3. **Logging** mit ILogger statt Console-Ausgaben
-4. **Validator-Klassen** für Input-Validierung
-5. **Configuration** in appsettings.json auslagern
+### Models.cs
+All data transfer objects as C# records:
+- Immutable by default
+- Clean serialization
+- Type-safe data structures
+
+### AppJsonSerializerContext.cs
+Source-generated JSON serialization:
+- Required for AOT compilation
+- All API types must be registered
+- Automatic camelCase conversion
+
+## Web API Integration
+
+The `RunCommand.cs` configures ASP.NET Core endpoints:
+
+```csharp
+POST /api/scan          # Scan folder
+GET  /api/patterns      # Get patterns
+POST /api/preview       # Preview rename
+POST /api/rename        # Execute rename
+GET  /api/metadata/{path} # Get file metadata
+```
+
+All endpoints use the same `FileService` as CLI commands, ensuring consistency.
+
+## Benefits of This Structure
+
+### ✅ **Maintainability**
+- Clear separation of commands by category
+- Easy to locate and modify specific functionality
+- Minimal coupling between components
+
+### ✅ **Extensibility**
+- New commands can be added easily
+- Consistent patterns to follow
+- Modular structure
+
+### ✅ **Performance**
+- Native AOT for fast startup
+- Efficient metadata extraction
+- Single-file deployment option
+
+### ✅ **Developer Experience**
+- Organized codebase
+- Clear naming conventions
+- Type safety with records and TypeScript
+
+## Adding New Features
+
+### Adding a New Command
+
+1. Create the command file in appropriate directory (Files/ or Patterns/)
+2. Implement the Create() method following the pattern
+3. Register in `Program.cs` or parent command
+4. Update documentation
+
+### Adding a New API Endpoint
+
+1. Add endpoint in `RunCommand.cs`
+2. Add models to `Models.cs`
+3. Register models in `AppJsonSerializerContext.cs`
+4. Add TypeScript types in `src/reshape-ui/src/types.ts`
+5. Add API client method in `src/reshape-ui/src/api.ts`
+
+### Adding New Metadata Fields
+
+1. Extract in `FileService.ExtractMetadataWithGps()`
+2. Document in pattern templates
+3. Update API documentation
+
+## Testing Strategy
+
+- Unit tests for `FileService` operations
+- Model validation tests
+- Utility function tests
+- Integration tests for command execution
+- Following Arrange // Act // Assert pattern with Shouldly assertions
+
+## Future Improvements
+
+Potential architectural enhancements:
+- Dependency injection for services
+- Structured logging with ILogger
+- Configuration file support
+- Plugin system for custom patterns
+- Command validation framework

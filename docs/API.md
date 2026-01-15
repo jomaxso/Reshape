@@ -114,6 +114,74 @@ Get available rename pattern templates.
 
 ---
 
+### POST `/api/patterns/add`
+
+Add a custom pattern template.
+
+**Request Body:**
+```json
+{
+    "pattern": "{camera_model}_{year}_{counter:3}",
+    "description": "Custom camera pattern with year and counter"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `pattern` | string | Yes | The pattern template to add |
+| `description` | string | Yes | Description of what the pattern does |
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Pattern added successfully"
+}
+```
+
+**Error Response:**
+```json
+{
+    "success": false,
+    "message": "Pattern already exists"
+}
+```
+
+---
+
+### POST `/api/patterns/remove`
+
+Remove a custom pattern template.
+
+**Request Body:**
+```json
+{
+    "pattern": "{camera_model}_{year}_{counter:3}"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `pattern` | string | Yes | The pattern template to remove |
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Pattern removed successfully"
+}
+```
+
+**Error Response:**
+```json
+{
+    "success": false,
+    "message": "Pattern not found"
+}
+```
+
+---
+
 ### POST `/api/preview`
 
 Generate a preview of rename operations.
@@ -369,6 +437,15 @@ interface VacationModeOptions {
     startDate?: string;         // ISO date
     dayFolderPattern: string;   // e.g., "Tag {day_number}"
     subfolderPattern?: string;  // e.g., "{camera_model}"
+}
+```
+
+### PatternResponse
+
+```typescript
+interface PatternResponse {
+    success: boolean;
+    message: string;
 }
 ```
 

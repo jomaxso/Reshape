@@ -6,7 +6,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Vue 3](https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vuedotjs)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENCE.txt)
 
 ## ✨ Features
 
@@ -134,26 +134,26 @@ This makes it easy for maintainers and contributors to test changes before mergi
 
 ```powershell
 # List files in a folder
-dotnet run --project src/reshape-cli/ -- list "C:\Photos" --ext .jpg .png
+dotnet run --project src/reshape-cli/ -- file list --path "C:\Photos" --ext .jpg .png
 
 # Preview rename operations
-dotnet run --project src/reshape-cli/ -- preview "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
+dotnet run --project src/reshape-cli/ -- file preview --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
 
 # Execute rename (interactive - will prompt for confirmation)
-dotnet run --project src/reshape-cli/ -- rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
+dotnet run --project src/reshape-cli/ -- file rename --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
 
 # Execute rename without confirmation prompt
-dotnet run --project src/reshape-cli/ -- rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg --no-interactive
+dotnet run --project src/reshape-cli/ -- file rename --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg --no-interactive
 
 # Show available patterns
-dotnet run --project src/reshape-cli/ -- patterns
+dotnet run --project src/reshape-cli/ -- pattern list
 ```
 
 ### Web UI Mode
 
 ```powershell
 # Start the web server
-dotnet run --project src/reshape-cli/ -- serve
+dotnet run --project src/reshape-cli/ -- run
 
 # Open browser at http://localhost:5000
 ```
@@ -162,11 +162,13 @@ dotnet run --project src/reshape-cli/ -- serve
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `serve` | Start the Web UI server | `reshape serve` |
-| `list` | List files in a folder | `reshape list ./photos --ext .jpg .png` |
-| `preview` | Preview rename operations | `reshape preview ./photos --pattern "{date_taken}_{filename}"` |
-| `rename` | Execute rename operations | `reshape rename ./photos --pattern "{year}/{month}/{filename}"` |
-| `patterns` | Show available pattern templates | `reshape patterns` |
+| `run` | Start the Web UI server | `reshape run` |
+| `file list` | List files in a folder | `reshape file list --path ./photos --ext .jpg .png` |
+| `file preview` | Preview rename operations | `reshape file preview --path ./photos --pattern "{date_taken}_{filename}"` |
+| `file rename` | Execute rename operations | `reshape file rename --path ./photos --pattern "{year}/{month}/{filename}"` |
+| `pattern list` | Show available pattern templates | `reshape pattern list` |
+| `pattern set` | Add a custom pattern | `reshape pattern set "{pattern}" "Description"` |
+| `pattern remove` | Remove a custom pattern | `reshape pattern remove "{pattern}"` |
 | `update` | Update to the latest version | `reshape update` |
 
 ### Update Command Options
@@ -181,9 +183,9 @@ dotnet run --project src/reshape-cli/ -- serve
 
 | Option | Description |
 |--------|-------------|
+| `--path` | Folder path to process |
 | `--ext` | Filter by file extensions (e.g., `.jpg .png .heic`) |
 | `--pattern` | Rename pattern with placeholders |
-| `--dry-run` | Preview changes without executing |
 | `--no-interactive` | Skip confirmation prompts and execute automatically |
 
 ## 🌐 Web UI
@@ -283,7 +285,11 @@ Tag 3/
 Reshape/
 ├── src/
 │   ├── reshape-cli/           # .NET 10 CLI with embedded web server
-│   │   ├── Commands/          # CLI command handlers
+│   │   ├── Commands/          # CLI commands
+│   │   │   ├── Files/         # File operation commands (list, preview, rename)
+│   │   │   ├── Patterns/      # Pattern-related commands
+│   │   │   ├── RunCommand.cs  # Web server command (serve)
+│   │   │   └── UpdateCommand.cs # Self-update command
 │   │   ├── Utilities/         # Helper classes
 │   │   ├── wwwroot/           # Compiled Vue app (auto-generated)
 │   │   ├── Program.cs         # Entry point
@@ -303,7 +309,8 @@ Reshape/
 │       ├── Services/          # Service tests
 │       └── Utilities/         # Utility tests
 │
-└── docs/                  # Documentation
+├── docs/                      # Documentation
+└── eng/                       # Build and versioning configuration
 ```
 
 ### Development Workflow
@@ -416,7 +423,7 @@ Please read our [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENCE.txt](LICENCE.txt) file for details.
 
 ## � Versioning
 

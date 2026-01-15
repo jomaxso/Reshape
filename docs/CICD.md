@@ -171,18 +171,26 @@ On Unix systems:
 
 ### Prerequisites
 
-1. Update version in `src/reshape-cli/Reshape.Cli.csproj`:
+1. Update version in `eng/Versions.props`:
    ```xml
-   <Version>X.Y.Z</Version>
+   <MajorVersion>X</MajorVersion>
+   <MinorVersion>Y</MinorVersion>
+   <PatchVersion>Z</PatchVersion>
+   <PreReleaseVersionLabel></PreReleaseVersionLabel>
    ```
 
 2. Commit all changes
 
-3. Create and push a version tag:
+3. Trigger the release workflow:
    ```bash
-   git tag -a vX.Y.Z -m "Release version X.Y.Z"
-   git push origin vX.Y.Z
+   # For stable releases
+   gh workflow run release.yml
+   
+   # For preview releases
+   gh workflow run release.yml -f prerelease=true
    ```
+
+See [VERSIONING.md](VERSIONING.md) for detailed information on the centralized versioning system.
 
 ### Versioning Scheme
 

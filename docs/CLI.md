@@ -10,12 +10,12 @@ reshape [command] [arguments] [options]
 
 ## Commands
 
-### `serve` - Start Web UI
+### `run` - Start Web UI
 
 Starts the Reshape web user interface server.
 
 ```bash
-reshape serve
+reshape run
 ```
 
 **Output:**
@@ -24,7 +24,7 @@ reshape serve
 
 **Example:**
 ```bash
-$ reshape serve
+$ reshape run
 🚀 Server Started
 ✓ Reshape Web UI is running!
 → http://localhost:5000
@@ -33,27 +33,23 @@ Press Ctrl+C to stop the server
 
 ---
 
-### `list` - List Files
+### `file list` - List Files
 
 Display files in a folder with metadata information.
 
 ```bash
-reshape list <path> [options]
+reshape file list [options]
 ```
-
-**Arguments:**
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `path` | Folder path to scan | Yes |
 
 **Options:**
 | Option | Description | Example |
 |--------|-------------|---------|
+| `--path` | Folder path to scan | `--path "C:\Photos\Vacation"` |
 | `--ext` | Filter by file extensions | `--ext .jpg .png` |
 
 **Example:**
 ```bash
-$ reshape list "C:\Photos\Vacation" --ext .jpg .png .heic
+$ reshape file list --path "C:\Photos\Vacation" --ext .jpg .png .heic
 
 ┌──────────────────┬────────────┬──────────────┬───────────────────────┐
 │ Name             │ Size       │ Extension    │ Date Modified         │
@@ -68,28 +64,24 @@ Total: 3 files (16.1 MB)
 
 ---
 
-### `preview` - Preview Renames
+### `file preview` - Preview Renames
 
 Show a preview of rename operations without executing them.
 
 ```bash
-reshape preview <path> [options]
+reshape file preview [options]
 ```
-
-**Arguments:**
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `path` | Folder path | Yes |
 
 **Options:**
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--pattern` | Rename pattern with placeholders | None |
+| `--path` | Folder path | Required |
+| `--pattern` | Rename pattern with placeholders | Required |
 | `--ext` | Filter by file extensions | All files |
 
 **Example:**
 ```bash
-$ reshape preview "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
+$ reshape file preview --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
 
 Preview: Rename Operations
 ══════════════════════════
@@ -107,31 +99,26 @@ Preview: Rename Operations
 
 ---
 
-### `rename` - Execute Renames
+### `file rename` - Execute Renames
 
 Execute rename operations on files.
 
 ```bash
-reshape rename <path> [options]
+reshape file rename [options]
 ```
-
-**Arguments:**
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `path` | Folder path | Yes |
 
 **Options:**
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--pattern` | Rename pattern with placeholders | None |
+| `--path` | Folder path | Required |
+| `--pattern` | Rename pattern with placeholders | Required |
 | `--ext` | Filter by file extensions | All files |
-| `--dry-run` | Preview changes without executing | `false` |
 | `--no-interactive` | Skip confirmation prompts and execute automatically | `false` |
 
 **Example:**
 ```bash
 # Interactive mode (default) - will prompt for confirmation
-$ reshape rename "C:\Photos" --pattern "{date_taken}_{counter:3}" --ext .jpg
+$ reshape file rename --path "C:\Photos" --pattern "{date_taken}_{counter:3}" --ext .jpg
 
 Rename 3 file(s)? [y/n] (y): y
 
@@ -146,7 +133,7 @@ Completed: 3 successful, 0 failed
 **Non-Interactive Example:**
 ```bash
 # Skip confirmation prompt - useful for automation/scripts
-$ reshape rename "C:\Photos" --pattern "{date_taken}_{counter:3}" --ext .jpg --no-interactive
+$ reshape file rename --path "C:\Photos" --pattern "{date_taken}_{counter:3}" --ext .jpg --no-interactive
 
 Renaming files...
 ✓ IMG_0001.jpg → 2024-01-15_001.jpg
@@ -156,31 +143,19 @@ Renaming files...
 Completed: 3 successful, 0 failed
 ```
 
-**Dry Run Example:**
-```bash
-$ reshape rename "C:\Photos" --pattern "{year}/{filename}" --dry-run
-
-DRY RUN - No files will be modified
-───────────────────────────────────
-Would rename: IMG_0001.jpg → 2024/IMG_0001.jpg
-Would rename: IMG_0002.jpg → 2024/IMG_0002.jpg
-
-Dry run complete: 2 files would be renamed
-```
-
 ---
 
-### `patterns` - Show Pattern Templates
+### `pattern list` - Show Pattern Templates
 
 Display available pattern templates with descriptions.
 
 ```bash
-reshape patterns
+reshape pattern list
 ```
 
 **Output:**
 ```bash
-$ reshape patterns
+$ reshape pattern list
 
 Available Pattern Templates
 ═══════════════════════════
@@ -195,6 +170,74 @@ Available Pattern Templates
 │ {filename}_{counter:3}                         │ Original name + counter: photo_001      │
 │ IMG_{year}{month}{day}_{counter:4}             │ Standard format: IMG_20240115_0001      │
 └────────────────────────────────────────────────┴─────────────────────────────────────────┘
+```
+
+---
+
+### `pattern set` - Add Custom Pattern
+
+Add a custom pattern template.
+
+```bash
+reshape pattern set <pattern> <description>
+```
+
+**Example:**
+```bash
+$ reshape pattern set "{camera_model}_{counter:4}" "Camera model with counter"
+✓ Pattern added successfully
+```
+
+---
+
+### `pattern remove` - Remove Custom Pattern
+
+Remove a custom pattern template.
+
+```bash
+reshape pattern remove <pattern>
+```
+
+**Example:**
+```bash
+$ reshape pattern remove "{camera_model}_{counter:4}"
+✓ Pattern removed successfully
+```
+
+---
+
+### `update` - Update Reshape
+
+Update Reshape CLI to the latest version.
+
+```bash
+reshape update [options]
+```
+
+**Options:**
+| Option | Description |
+|--------|-------------|
+| `--check` | Check for updates without installing |
+| `--preview` | Include preview/prerelease versions |
+| `--version` | Update to a specific version |
+| `--pr` | Install from a specific pull request number |
+
+**Examples:**
+```bash
+# Check for updates
+reshape update --check
+
+# Update to latest stable
+reshape update
+
+# Update to latest preview
+reshape update --preview
+
+# Update to specific version
+reshape update --version v0.2.0
+
+# Install from pull request #42
+reshape update --pr 42
 ```
 
 ---
@@ -278,31 +321,31 @@ Available Pattern Templates
 
 ```bash
 # Preview first
-reshape preview "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg .png
+reshape file preview --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg .png
 
 # Execute if preview looks good (will prompt for confirmation)
-reshape rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg .png
+reshape file rename --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg .png
 
 # Execute without confirmation prompt (useful for scripts)
-reshape rename "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg .png --no-interactive
+reshape file rename --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg .png --no-interactive
 ```
 
 ### Organize by Camera Model
 
 ```bash
-reshape rename "C:\Photos" --pattern "{camera_model}/{date_taken}_{counter:4}" --ext .jpg
+reshape file rename --path "C:\Photos" --pattern "{camera_model}/{date_taken}_{counter:4}" --ext .jpg
 ```
 
 ### Create Dated Folders
 
 ```bash
-reshape rename "C:\Photos" --pattern "{year}/{month}/{day}/{filename}" --ext .jpg .heic
+reshape file rename --path "C:\Photos" --pattern "{year}/{month}/{day}/{filename}" --ext .jpg .heic
 ```
 
 ### Standard Photo Naming
 
 ```bash
-reshape rename "C:\Photos" --pattern "IMG_{year}{month}{day}_{counter:4}" --ext .jpg
+reshape file rename --path "C:\Photos" --pattern "IMG_{year}{month}{day}_{counter:4}" --ext .jpg
 ```
 
 ---

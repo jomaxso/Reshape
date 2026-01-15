@@ -10,7 +10,7 @@ Please be respectful and considerate in all interactions. We welcome contributor
 
 ### Reporting Bugs
 
-1. Check if the bug has already been reported in [Issues](https://github.com/jomaxso/TypeScript/issues)
+1. Check if the bug has already been reported in [Issues](https://github.com/jomaxso/Reshape/issues)
 2. If not, create a new issue with:
    - Clear, descriptive title
    - Steps to reproduce
@@ -45,11 +45,11 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed setup instructions.
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/TypeScript.git
-cd TypeScript
+git clone https://github.com/YOUR_USERNAME/Reshape.git
+cd Reshape
 
 # Build CLI
-cd reshape-cli
+cd src/reshape-cli
 dotnet build
 
 # Build UI
@@ -59,7 +59,7 @@ npm run build
 
 # Run
 cd ../reshape-cli
-dotnet run -- serve
+dotnet run -- run
 ```
 
 ## Pull Request Process
@@ -141,7 +141,11 @@ refactor: Extract metadata extraction to separate method
 ```
 src/
   reshape-cli/
-  ├── Commands/          # One handler per file
+  ├── Commands/          # Command structure
+  │   ├── Files/         # File operation commands (list, preview, rename)
+  │   ├── Patterns/      # Pattern-related commands
+  │   ├── RunCommand.cs  # Web server command (serve)
+  │   └── UpdateCommand.cs # Self-update command
   ├── Utilities/         # Helper classes
   ├── FileService.cs     # Core business logic
   ├── Models.cs          # All data models
