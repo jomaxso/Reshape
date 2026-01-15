@@ -88,7 +88,7 @@ jobs:
           coverage=$(grep -oP 'line-rate="\K[0-9.]+' ./coverage-report/Cobertura.xml | head -1)
           coverage_percent=$(awk "BEGIN {printf \"%.2f\", $coverage * 100}")
           echo "Line Coverage: $coverage_percent%"
-          
+
           # Require minimum 19% coverage (can be increased over time)
           # Excludes auto-generated files via coverlet.runsettings
           threshold=19
