@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src\Reshape.Cli\Reshape.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests\Reshape.Cli.Tests\Reshape.Cli.Tests.csproj" />
+  </Folder>
+</Solution>
