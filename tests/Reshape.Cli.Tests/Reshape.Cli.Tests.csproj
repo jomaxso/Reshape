@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\reshape-cli\Reshape.Cli.csproj" />
+    <ProjectReference Include="..\..\src\Reshape.Cli\Reshape.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>

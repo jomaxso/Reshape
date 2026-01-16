@@ -96,10 +96,10 @@ git clone https://github.com/jomaxso/Reshape.git
 cd Reshape
 
 # Build the CLI
-dotnet build src/reshape-cli/
+dotnet build src/Reshape.Cli/
 
 # (Optional) Build the Web UI
-cd src/reshape-ui
+cd src/Reshape.Ui
 npm install
 npm run build
 ```
@@ -107,7 +107,7 @@ npm run build
 #### Publish as Native Executable
 
 ```powershell
-cd src/reshape-cli
+cd src/Reshape.Cli
 dotnet publish -c Release -r <RID> --self-contained
 # Replace <RID> with: win-x64, linux-x64, or osx-arm64
 ```
@@ -134,26 +134,26 @@ This makes it easy for maintainers and contributors to test changes before mergi
 
 ```powershell
 # List files in a folder
-dotnet run --project src/reshape-cli/ -- file list --path "C:\Photos" --ext .jpg .png
+dotnet run --project src/Reshape.Cli/ -- file list --path "C:\Photos" --ext .jpg .png
 
 # Preview rename operations
-dotnet run --project src/reshape-cli/ -- file preview --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
+dotnet run --project src/Reshape.Cli/ -- file preview --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
 
 # Execute rename (interactive - will prompt for confirmation)
-dotnet run --project src/reshape-cli/ -- file rename --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
+dotnet run --project src/Reshape.Cli/ -- file rename --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg
 
 # Execute rename without confirmation prompt
-dotnet run --project src/reshape-cli/ -- file rename --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg --no-interactive
+dotnet run --project src/Reshape.Cli/ -- file rename --path "C:\Photos" --pattern "{year}-{month}-{day}_{filename}" --ext .jpg --no-interactive
 
 # Show available patterns
-dotnet run --project src/reshape-cli/ -- pattern list
+dotnet run --project src/Reshape.Cli/ -- pattern list
 ```
 
 ### Web UI Mode
 
 ```powershell
 # Start the web server
-dotnet run --project src/reshape-cli/ -- run
+dotnet run --project src/Reshape.Cli/ -- run
 
 # Open browser at http://localhost:5000
 ```
@@ -284,7 +284,7 @@ Tag 3/
 ```
 Reshape/
 ├── src/
-│   ├── reshape-cli/           # .NET 10 CLI with embedded web server
+│   ├── Reshape.Cli/           # .NET 10 CLI with embedded web server
 │   │   ├── Commands/          # CLI commands
 │   │   │   ├── Files/         # File operation commands (list, preview, rename)
 │   │   │   ├── Patterns/      # Pattern-related commands
@@ -296,7 +296,7 @@ Reshape/
 │   │   ├── FileService.cs     # Core file operations
 │   │   └── Models.cs          # Data models
 │   │
-│   └── reshape-ui/            # Vue 3 + TypeScript frontend
+│   └── Reshape.Ui/            # Vue 3 + TypeScript frontend
 │       ├── src/
 │       │   ├── components/    # Vue components
 │       │   ├── api.ts         # API client
@@ -317,11 +317,11 @@ Reshape/
 
 ```powershell
 # Terminal 1: Start CLI in watch mode
-cd src/reshape-cli
+cd src/Reshape.Cli
 dotnet watch run -- serve
 
 # Terminal 2: Start Vue dev server (optional, for hot reload)
-cd src/reshape-ui
+cd src/Reshape.Ui
 npm run dev
 ```
 
@@ -381,11 +381,11 @@ public void FormatSize_ShouldFormatBytesCorrectly()
 
 ```powershell
 # Build Vue UI first
-cd src/reshape-ui
+cd src/Reshape.Ui
 npm run build
 
 # Build CLI (UI is embedded in wwwroot/)
-cd ../reshape-cli
+cd ../Reshape.Cli
 dotnet publish -c Release
 ```
 
@@ -409,7 +409,7 @@ dotnet publish -c Release -r win-x64 --self-contained
 | [docs/CLI.md](docs/CLI.md) | CLI reference documentation |
 | [docs/API.md](docs/API.md) | REST API documentation |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development guide |
-| [src/reshape-cli/ARCHITECTURE.md](src/reshape-cli/ARCHITECTURE.md) | Code architecture overview |
+| [src/Reshape.Cli/ARCHITECTURE.md](src/Reshape.Cli/ARCHITECTURE.md) | Code architecture overview |
 
 ## 🤝 Contributing
 

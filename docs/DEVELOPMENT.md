@@ -29,7 +29,7 @@ cd Reshape
 ### 2. Build the CLI
 
 ```bash
-cd src/reshape-cli
+cd src/Reshape.Cli
 dotnet restore
 dotnet build
 ```
@@ -37,7 +37,7 @@ dotnet build
 ### 3. Build the Vue UI
 
 ```bash
-cd src/reshape-ui
+cd src/Reshape.Ui
 npm install
 npm run build
 ```
@@ -45,7 +45,7 @@ npm run build
 ### 4. Run the Application
 
 ```bash
-cd src/reshape-cli
+cd src/Reshape.Cli
 dotnet run -- run
 ```
 
@@ -60,7 +60,7 @@ Open `http://localhost:5000` in your browser.
 ```
 Reshape/
 ├── src/
-│   ├── reshape-cli/           # .NET Backend + CLI
+│   ├── Reshape.Cli/           # .NET Backend + CLI
 │   │   ├── Commands/          # Command organization
 │   │   │   ├── Files/         # File operation commands
 │   │   │   ├── Patterns/      # Pattern commands
@@ -75,7 +75,7 @@ Reshape/
 │   │   ├── Models.cs          # Data models
 │   │   └── AppJsonSerializerContext.cs  # AOT JSON config
 │   │
-│   └── reshape-ui/            # Vue 3 Frontend
+│   └── Reshape.Ui/            # Vue 3 Frontend
 │       └── src/
 │           ├── components/    # Vue components
 │           ├── api.ts         # API client
@@ -96,7 +96,7 @@ Reshape/
 ### CLI Development
 
 ```bash
-cd reshape-cli
+cd Reshape.Cli
 
 # Run in development mode
 dotnet run -- file list --path "C:\TestFolder" --ext .jpg
@@ -113,7 +113,7 @@ dotnet watch run -- run
 For UI-only development with hot reload:
 
 ```bash
-cd reshape-ui
+cd Reshape.Ui
 
 # Start Vite dev server
 npm run dev
@@ -127,13 +127,13 @@ This runs the Vue app at `http://localhost:5173` with hot module replacement.
 
 Terminal 1 - Backend:
 ```bash
-cd reshape-cli
+cd Reshape.Cli
 dotnet watch run -- run
 ```
 
 Terminal 2 - Frontend (optional, for hot reload):
 ```bash
-cd reshape-ui
+cd Reshape.Ui
 npm run dev
 ```
 
@@ -143,7 +143,7 @@ npm run dev
 
 ### Adding a New CLI Command
 
-1. **Create the command** in `src/reshape-cli/Commands/Files/` or `Commands/Patterns/`:
+1. **Create the command** in `src/Reshape.Cli/Commands/Files/` or `Commands/Patterns/`:
 
 ```csharp
 namespace Reshape.Cli.Commands.Files;
@@ -221,7 +221,7 @@ internal record MyResponse(string Result);
 internal partial class AppJsonSerializerContext : JsonSerializerContext;
 ```
 
-4. **Add TypeScript types** in `src/reshape-ui/src/types.ts`:
+4. **Add TypeScript types** in `src/Reshape.Ui/src/types.ts`:
 
 ```typescript
 export interface MyRequest {
@@ -233,7 +233,7 @@ export interface MyResponse {
 }
 ```
 
-5. **Add API method** in `src/reshape-ui/src/api.ts`:
+5. **Add API method** in `src/Reshape.Ui/src/api.ts`:
 
 ```typescript
 async myEndpoint(param: string): Promise<MyResponse> {
@@ -293,17 +293,17 @@ Create a test folder with sample images that have EXIF data for comprehensive te
 ### Standard Build
 
 ```bash
-cd reshape-ui
+cd Reshape.Ui
 npm run build
 
-cd ../reshape-cli
+cd ../Reshape.Cli
 dotnet publish -c Release
 ```
 
 ### Native AOT Build
 
 ```bash
-cd reshape-cli
+cd Reshape.Cli
 dotnet publish -c Release -r win-x64 --self-contained
 ```
 
@@ -392,7 +392,7 @@ const selectedItem = computed(() => props.items[selectedIndex.value]);
 
 **Solution:** Rebuild the Vue app:
 ```bash
-cd reshape-ui
+cd Reshape.Ui
 npm run build
 ```
 
@@ -422,9 +422,9 @@ npm run build
             "name": "Debug CLI",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/src/reshape-cli/bin/Debug/net10.0/Reshape.Cli.dll",
+            "program": "${workspaceFolder}/src/Reshape.Cli/bin/Debug/net10.0/Reshape.Cli.dll",
             "args": ["serve"],
-            "cwd": "${workspaceFolder}/src/reshape-cli"
+            "cwd": "${workspaceFolder}/src/Reshape.Cli"
         }
     ]
 }

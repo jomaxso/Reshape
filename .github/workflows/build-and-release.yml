@@ -37,21 +37,21 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-          cache-dependency-path: src/reshape-ui/package-lock.json
+          cache-dependency-path: src/Reshape.Ui/package-lock.json
 
       - name: Install UI dependencies
-        working-directory: src/reshape-ui
+        working-directory: src/Reshape.Ui
         run: npm ci
 
       - name: Build UI
-        working-directory: src/reshape-ui
+        working-directory: src/Reshape.Ui
         run: npm run build
 
       - name: Upload UI artifact
         uses: actions/upload-artifact@v4
         with:
           name: ui-build
-          path: src/reshape-cli/wwwroot/
+          path: src/Reshape.Cli/wwwroot/
           retention-days: 1
 
   test:
@@ -156,39 +156,39 @@ jobs:
         uses: actions/download-artifact@v4.1.3
         with:
           name: ui-build
-          path: src/reshape-cli/wwwroot/
+          path: src/Reshape.Cli/wwwroot/
 
       - name: Restore dependencies
-        working-directory: src/reshape-cli
+        working-directory: src/Reshape.Cli
         run: dotnet restore
 
       - name: Publish AOT binary
-        working-directory: src/reshape-cli
+        working-directory: src/Reshape.Cli
         run: |
           dotnet publish -c Release -r ${{ matrix.rid }} --self-contained -o ./publish/${{ matrix.artifact }}
 
       - name: Create archive (Unix)
         if: matrix.os != 'windows'
-        working-directory: src/reshape-cli/publish
+        working-directory: src/Reshape.Cli/publish
         run: |
           tar -czf ${{ matrix.artifact }}.tar.gz ${{ matrix.artifact }}/
 
       - name: Create archive (Windows)
         if: matrix.os == 'windows'
-        working-directory: src/reshape-cli/publish
+        working-directory: src/Reshape.Cli/publish
         shell: pwsh
         run: |
           Compress-Archive -Path ${{ matrix.artifact }}/* -DestinationPath ${{ matrix.artifact }}.zip
 
       - name: Generate checksum (Unix)
         if: matrix.os != 'windows'
-        working-directory: src/reshape-cli/publish
+        working-directory: src/Reshape.Cli/publish
         run: |
           shasum -a 256 ${{ matrix.artifact }}.tar.gz > ${{ matrix.artifact }}.tar.gz.sha256
 
       - name: Generate checksum (Windows)
         if: matrix.os == 'windows'
-        working-directory: src/reshape-cli/publish
+        working-directory: src/Reshape.Cli/publish
         shell: pwsh
         run: |
           $hash = Get-FileHash -Algorithm SHA256 -Path "${{ matrix.artifact }}.zip"
@@ -199,7 +199,7 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: |
-            src/reshape-cli/publish/${{ matrix.artifact }}.*
+            src/Reshape.Cli/publish/${{ matrix.artifact }}.*
           retention-days: 7
 
   # This job only runs on direct tag pushes (not when called by release.yml)
