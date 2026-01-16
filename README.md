@@ -88,25 +88,42 @@ Extract the archive and add the executable to your PATH.
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Node.js 20+](https://nodejs.org/) (for UI development)
 
-#### Steps
+#### Quick Build
+
+Use the automated build script:
+
+```powershell
+# Windows (PowerShell)
+.\build.ps1
+
+# Linux / macOS
+./build.sh
+```
+
+#### Manual Steps
 
 ```powershell
 # Clone the repository
 git clone https://github.com/jomaxso/Reshape.git
 cd Reshape
 
-# Build the CLI
-dotnet build src/Reshape.Cli/
-
-# (Optional) Build the Web UI
+# Build the Vue UI first (required!)
 cd src/Reshape.Ui
 npm install
 npm run build
+
+# Build the CLI
+cd ../Reshape.Cli
+dotnet build
 ```
 
 #### Publish as Native Executable
 
 ```powershell
+# Using build script (recommended)
+.\build.ps1 -Configuration Release -Runtime win-x64
+
+# Manual publish
 cd src/Reshape.Cli
 dotnet publish -c Release -r <RID> --self-contained
 # Replace <RID> with: win-x64, linux-x64, or osx-arm64

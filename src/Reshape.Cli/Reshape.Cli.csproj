@@ -24,4 +24,9 @@
     <PackageReference Include="TimeZoneConverter" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Ensure wwwroot files are included in publish output -->
+    <Content Include="wwwroot\**\*.*" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
