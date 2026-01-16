@@ -49,16 +49,16 @@ git clone https://github.com/YOUR_USERNAME/Reshape.git
 cd Reshape
 
 # Build CLI
-cd src/reshape-cli
+cd src/Reshape.Cli
 dotnet build
 
 # Build UI
-cd ../reshape-ui
+cd ../Reshape.Ui
 npm install
 npm run build
 
 # Run
-cd ../reshape-cli
+cd ../Reshape.Cli
 dotnet run -- run
 ```
 
@@ -140,7 +140,7 @@ refactor: Extract metadata extraction to separate method
 
 ```
 src/
-  reshape-cli/
+  Reshape.Cli/
   ├── Commands/          # Command structure
   │   ├── Files/         # File operation commands (list, preview, rename)
   │   ├── Patterns/      # Pattern-related commands
@@ -151,7 +151,7 @@ src/
   ├── Models.cs          # All data models
   └── AppJsonSerializerContext.cs  # AOT JSON config
 
-  reshape-ui/
+  Reshape.Ui/
   └── src/
       ├── components/    # Vue components
       ├── api.ts         # API client

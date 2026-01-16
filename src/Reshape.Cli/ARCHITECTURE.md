@@ -7,7 +7,7 @@ The Reshape CLI is structured to support both command-line and web-based interfa
 ## Project Structure
 
 ```
-reshape-cli/
+Reshape.Cli/
 ├── Commands/                          # Command organization
 │   ├── Files/                         # File operation commands
 │   │   ├── FileCommand.cs            # Base file command
@@ -179,8 +179,8 @@ All endpoints use the same `FileService` as CLI commands, ensuring consistency.
 1. Add endpoint in `RunCommand.cs`
 2. Add models to `Models.cs`
 3. Register models in `AppJsonSerializerContext.cs`
-4. Add TypeScript types in `src/reshape-ui/src/types.ts`
-5. Add API client method in `src/reshape-ui/src/api.ts`
+4. Add TypeScript types in `src/Reshape.Ui/src/types.ts`
+5. Add API client method in `src/Reshape.Ui/src/api.ts`
 
 ### Adding New Metadata Fields
 

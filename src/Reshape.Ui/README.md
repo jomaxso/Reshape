@@ -49,7 +49,7 @@ The dev server runs at `http://localhost:5173` with hot module replacement.
 **Note:** You must also run the backend API server for the UI to function:
 
 ```bash
-cd ../reshape-cli
+cd ../Reshape.Cli
 dotnet run -- run
 ```
 
@@ -60,11 +60,11 @@ dotnet run -- run
 npm run build
 ```
 
-Output goes to `../reshape-cli/wwwroot/` where it's embedded in the CLI application.
+Output goes to `../Reshape.Cli/wwwroot/` where it's embedded in the CLI application.
 
 ## Type Safety
 
-TypeScript types in `types.ts` mirror the C# models in `src/reshape-cli/Models.cs`. When adding new API endpoints or models:
+TypeScript types in `types.ts` mirror the C# models in `src/Reshape.Cli/Models.cs`. When adding new API endpoints or models:
 
 1. Update C# models in `Models.cs`
 2. Register in `AppJsonSerializerContext.cs` for AOT
