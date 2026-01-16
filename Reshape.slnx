@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Reshape.Ui/Reshape.Ui.csproj" />
     <Project Path="src\Reshape.Cli\Reshape.Cli.csproj" />
   </Folder>
   <Folder Name="/tests/">
