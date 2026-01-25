@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import FolderPicker from './components/FolderPicker.vue';
+import ExtensionFilter from './components/ExtensionFilter.vue';
 import FileList from './components/FileList.vue';
 import MetadataPanel from './components/MetadataPanel.vue';
 import VacationModePanel from './components/VacationModePanel.vue';
@@ -15,6 +16,7 @@ const DEFAULT_PATTERN_COUNT = 6; // Number of built-in patterns
 
 // State
 const folderPath = ref('');
+const selectedExtensions = ref<string[]>([]);
 const files = ref<FileInfo[]>([]);
 const selectedFile = ref<FileInfo | null>(null);
 const patterns = ref<RenamePattern[]>([]);
@@ -112,7 +114,7 @@ async function handleScan() {
   vacationPreviewItems.value = [];
 
   try {
-    const response = await api.scanFolder(folderPath.value);
+    const response = await api.scanFolder(folderPath.value, selectedExtensions.value.length > 0 ? selectedExtensions.value : undefined);
     files.value = response.files;
 
     // Auto-select first file
@@ -140,7 +142,7 @@ async function handleGeneralPreview(pattern: string) {
   error.value = null;
 
   try {
-    const response = await api.previewRename(folderPath.value, pattern);
+    const response = await api.previewRename(folderPath.value, pattern, selectedExtensions.value.length > 0 ? selectedExtensions.value : undefined);
     generalPreviewItems.value = response.items;
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to generate preview';
@@ -160,7 +162,7 @@ async function handleVacationPreview({ pattern, vacationMode }: { pattern: strin
   error.value = null;
 
   try {
-    const response = await api.previewRename(folderPath.value, pattern, undefined, vacationMode);
+    const response = await api.previewRename(folderPath.value, pattern, selectedExtensions.value.length > 0 ? selectedExtensions.value : undefined, vacationMode);
     vacationPreviewItems.value = response.items;
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to generate preview';
@@ -291,6 +293,9 @@ function handleToggleVacationItem(item: RenamePreviewItem) {
     <main class="main">
       <!-- Folder Picker -->
       <FolderPicker v-model="folderPath" :loading="loading" @scan="handleScan" />
+      
+      <!-- Extension Filter -->
+      <ExtensionFilter @update:selectedExtensions="selectedExtensions = $event" />
 
       <!-- Error / Success Messages -->
       <div v-if="error" class="message error">
