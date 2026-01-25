@@ -18,10 +18,6 @@ const availableExtensions = [
     { ext: '.mp4', label: 'MP4', category: 'video' },
     { ext: '.mov', label: 'MOV', category: 'video' },
     { ext: '.avi', label: 'AVI', category: 'video' },
-    { ext: '.txt', label: 'TXT', category: 'document' },
-    { ext: '.pdf', label: 'PDF', category: 'document' },
-    { ext: '.doc', label: 'DOC', category: 'document' },
-    { ext: '.docx', label: 'DOCX', category: 'document' },
 ];
 
 // Initially all extensions are selected (as per requirement)
@@ -35,8 +31,7 @@ const isExpanded = ref(false);
 const groupedExtensions = computed(() => {
     const groups: Record<string, typeof availableExtensions> = {
         image: [],
-        video: [],
-        document: []
+        video: []
     };
     
     availableExtensions.forEach(ext => {
@@ -109,8 +104,7 @@ function emitUpdate() {
 function getCategoryLabel(category: string): string {
     const labels: Record<string, string> = {
         image: '🖼️ Bilder',
-        video: '🎬 Videos',
-        document: '📄 Dokumente'
+        video: '🎬 Videos'
     };
     return labels[category] || category;
 }

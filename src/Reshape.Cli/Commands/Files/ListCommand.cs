@@ -17,7 +17,7 @@ internal sealed class ListCommand : AsynchronousCommandLineAction
         var path = parseResult.GetPathOrPrompt();
 
         var availableExtensions = new[] { ".jpg", ".jpeg", ".png", ".heic", ".gif", ".bmp", ".tiff", ".raw",
-                                          ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx" };
+                                          ".mp4", ".mov", ".avi" };
         
         var extensions = noInteractive
             ? parseResult.GetRequiredValue(GlobalOptions.Extension)
