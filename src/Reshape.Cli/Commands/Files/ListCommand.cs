@@ -16,15 +16,21 @@ internal sealed class ListCommand : AsynchronousCommandLineAction
 
         var path = parseResult.GetPathOrPrompt();
 
+        var availableExtensions = new[] { ".jpg", ".jpeg", ".png", ".heic", ".gif", ".bmp", ".tiff", ".raw",
+                                          ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx" };
+        
         var extensions = noInteractive
             ? parseResult.GetRequiredValue(GlobalOptions.Extension)
-            : [..AnsiConsole.Prompt(
+            : AnsiConsole.Prompt(
                 new MultiSelectionPrompt<string>()
                     .Title("[yellow]Select file extensions to process:[/]")
                     .PageSize(15)
                     .InstructionsText("[grey](Press [blue]<space>[/] to toggle, [green]<enter>[/] to accept)[/]")
-                    .AddChoices(".jpg", ".jpeg", ".png", ".heic", ".gif", ".bmp", ".tiff", ".raw",
-                                ".mp4", ".mov", ".avi", ".txt", ".pdf", ".doc", ".docx"))];
+                    .AddChoices(availableExtensions)
+                    .Select(".jpg").Select(".jpeg").Select(".png").Select(".heic").Select(".gif")
+                    .Select(".bmp").Select(".tiff").Select(".raw").Select(".mp4").Select(".mov")
+                    .Select(".avi").Select(".txt").Select(".pdf").Select(".doc").Select(".docx"))
+                .ToArray();
 
         try
         {
