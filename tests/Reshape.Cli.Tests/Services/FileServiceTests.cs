@@ -57,15 +57,17 @@ public class FileServiceTests : IDisposable
     public void ScanFolder_ShouldReturnAllFiles_WhenNoExtensionFilter()
     {
         // Arrange
-        CreateTestFile("test1.txt");
-        CreateTestFile("test2.jpg");
-        CreateTestFile("test3.png");
+        CreateTestFile("test1.txt");  // Not allowed - will be filtered out
+        CreateTestFile("test2.jpg");  // Allowed - image
+        CreateTestFile("test3.png");  // Allowed - image
 
         // Act
         var result = FileService.ScanFolder(_testDataPath);
 
         // Assert
-        result.Length.ShouldBe(3);
+        // Only image and video files should be returned (txt is not allowed)
+        result.Length.ShouldBe(2);
+        result.ShouldAllBe(f => f.Extension == ".jpg" || f.Extension == ".png");
     }
 
     [Fact]

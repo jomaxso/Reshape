@@ -10,9 +10,12 @@ using MetadataExtractor.Formats.Exif.Makernotes;
 
 internal static class FileService
 {
-    private static readonly string[] ImageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp", ".heic"];
-    private static readonly string[] VideoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv"];
-    private static readonly string[] AudioExtensions = [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"];
+    // Only image and video files are allowed for renaming operations
+    private static readonly string[] ImageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".heic", ".raw"];
+    private static readonly string[] VideoExtensions = [".mp4", ".mov", ".avi"];
+    
+    // Combined allowed extensions
+    private static readonly string[] AllowedExtensions = [..ImageExtensions, ..VideoExtensions];
 
     public static FileInfo[] ScanFolder(string folderPath, string[]? extensions = null)
     {
@@ -23,6 +26,9 @@ internal static class FileService
 
         var files = System.IO.Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
             .Select(path => new System.IO.FileInfo(path))
+            // First filter: Only allow image and video files
+            .Where(f => AllowedExtensions.Any(ext => f.Extension.Equals(ext, StringComparison.OrdinalIgnoreCase)))
+            // Second filter: Apply user-specified extension filter if provided
             .Where(f => extensions == null || extensions.Length == 0 ||
                         extensions.Any(ext => f.Extension.Equals(ext, StringComparison.OrdinalIgnoreCase)))
             .Select(f =>
