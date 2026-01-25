@@ -63,6 +63,7 @@ function toggleExtension(ext: string) {
     } else {
         selectedExtensions.value.add(ext);
     }
+    // Trigger reactivity by creating new Set reference
     selectedExtensions.value = new Set(selectedExtensions.value);
     emitUpdate();
 }
@@ -89,6 +90,7 @@ function selectCategory(category: string) {
         categoryExts.forEach(ext => selectedExtensions.value.add(ext));
     }
     
+    // Trigger reactivity by creating new Set reference
     selectedExtensions.value = new Set(selectedExtensions.value);
     emitUpdate();
 }

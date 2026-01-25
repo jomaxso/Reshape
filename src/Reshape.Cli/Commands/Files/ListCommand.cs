@@ -22,14 +22,7 @@ internal sealed class ListCommand : AsynchronousCommandLineAction
         var extensions = noInteractive
             ? parseResult.GetRequiredValue(GlobalOptions.Extension)
             : AnsiConsole.Prompt(
-                new MultiSelectionPrompt<string>()
-                    .Title("[yellow]Select file extensions to process:[/]")
-                    .PageSize(15)
-                    .InstructionsText("[grey](Press [blue]<space>[/] to toggle, [green]<enter>[/] to accept)[/]")
-                    .AddChoices(availableExtensions)
-                    .Select(".jpg").Select(".jpeg").Select(".png").Select(".heic").Select(".gif")
-                    .Select(".bmp").Select(".tiff").Select(".raw").Select(".mp4").Select(".mov")
-                    .Select(".avi").Select(".txt").Select(".pdf").Select(".doc").Select(".docx"))
+                CreateMultiSelectionPrompt(availableExtensions))
                 .ToArray();
 
         try
@@ -81,6 +74,23 @@ internal sealed class ListCommand : AsynchronousCommandLineAction
             Header = new PanelHeader($"[yellow]📁 {Markup.Escape(fullPath)}[/]"),
             Border = BoxBorder.Double
         });
+    }
+
+    private static MultiSelectionPrompt<string> CreateMultiSelectionPrompt(string[] availableExtensions)
+    {
+        var prompt = new MultiSelectionPrompt<string>()
+            .Title("[yellow]Select file extensions to process:[/]")
+            .PageSize(15)
+            .InstructionsText("[grey](Press [blue]<space>[/] to toggle, [green]<enter>[/] to accept)[/]")
+            .AddChoices(availableExtensions);
+
+        // Pre-select all extensions
+        foreach (var ext in availableExtensions)
+        {
+            prompt.Select(ext);
+        }
+
+        return prompt;
     }
 
 
