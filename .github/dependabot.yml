@@ -19,8 +19,6 @@ updates:
       - "dependencies"
       - "nuget"
     open-pull-requests-limit: 1
-    # Target custom version management file
-    versioning-strategy: "increase"
 
   # npm packages (Vue.js UI dependencies)
   - package-ecosystem: "npm"
