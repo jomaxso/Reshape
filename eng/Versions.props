@@ -28,15 +28,15 @@
   <!-- Package Versions -->
   <PropertyGroup>
     <SpectreConsoleVersion>0.54.0</SpectreConsoleVersion>
-    <SystemCommandLineVersion>2.0.1</SystemCommandLineVersion>
-    <MetadataExtractorVersion>2.8.1</MetadataExtractorVersion>
+    <SystemCommandLineVersion>2.0.2</SystemCommandLineVersion>
+    <MetadataExtractorVersion>2.9.0</MetadataExtractorVersion>
     <TimeZoneConverterVersion>7.2.0</TimeZoneConverterVersion>
     
     <!-- Test Dependencies -->
     <XunitVersion>2.9.3</XunitVersion>
-    <XunitRunnerVisualStudioVersion>3.1.4</XunitRunnerVisualStudioVersion>
-    <MicrosoftNETTestSdkVersion>17.14.1</MicrosoftNETTestSdkVersion>
+    <XunitRunnerVisualStudioVersion>3.1.5</XunitRunnerVisualStudioVersion>
+    <MicrosoftNETTestSdkVersion>18.0.1</MicrosoftNETTestSdkVersion>
     <CoverletCollectorVersion>6.0.4</CoverletCollectorVersion>
-    <ShouldlyVersion>4.2.1</ShouldlyVersion>
+    <ShouldlyVersion>4.3.0</ShouldlyVersion>
   </PropertyGroup>
 </Project>
